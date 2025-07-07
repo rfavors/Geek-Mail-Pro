@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import nodemailer from "nodemailer";
 import { z } from "zod";
 import { 
   insertDomainSchema, 
@@ -123,15 +124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { alias, destination } = req.body;
       
-      // Import nodemailer for email sending
-      const nodemailer = require('nodemailer');
-      
       // Create transporter (using Gmail SMTP for testing)
       const transporter = nodemailer.createTransporter({
         service: 'gmail',
         auth: {
-          user: process.env.SMTP_USER || 'test@gmail.com',
-          pass: process.env.SMTP_PASS || 'test'
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
         }
       });
       
@@ -157,25 +155,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `
       };
       
-      try {
-        // Send the email
-        await transporter.sendMail(mailOptions);
-        console.log(`Test email sent successfully from ${alias} to ${destination}`);
-        
-        res.json({ 
-          success: true, 
-          message: `Test email sent from ${alias} to ${destination}` 
+      // Validate SMTP configuration
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        return res.status(400).json({ 
+          message: "SMTP configuration missing. Please configure SMTP_USER and SMTP_PASS environment variables." 
         });
-      } catch (emailError) {
-        console.error("Email sending failed:", emailError);
+      }
+
+      try {
+        // Verify transporter connection
+        await transporter.verify();
+        console.log('SMTP connection verified successfully');
         
-        // Fallback: Log the test for now if email fails
-        console.log(`TEST EMAIL SIMULATION: From ${alias} to ${destination}`);
+        // Send the email
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Test email sent successfully from ${alias} to ${destination}. Message ID: ${info.messageId}`);
         
         res.json({ 
           success: true, 
-          message: `Test email simulated (SMTP not configured). Check server logs for details.`,
-          note: "Configure SMTP_USER and SMTP_PASS environment variables for real email sending."
+          message: `Test email sent successfully to ${destination}`,
+          messageId: info.messageId
+        });
+      } catch (emailError: any) {
+        console.error("Email sending failed:", emailError.message);
+        
+        res.status(500).json({ 
+          success: false, 
+          message: `Failed to send test email: ${emailError.message}`,
+          error: emailError.code || 'UNKNOWN_ERROR'
         });
       }
       
