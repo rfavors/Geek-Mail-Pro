@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { DomainConfig } from "@/components/domain/domain-config";
 import { AliasManager } from "@/components/domain/alias-manager";
+import { AdvancedAliasManager } from "@/components/domain/advanced-alias-manager";
 import {
   Tabs,
   TabsContent,
@@ -168,7 +169,8 @@ export default function DomainSettings() {
       <Tabs defaultValue="domains" className="space-y-6">
         <TabsList>
           <TabsTrigger value="domains">Domains</TabsTrigger>
-          <TabsTrigger value="aliases">Email Aliases</TabsTrigger>
+          <TabsTrigger value="aliases">Basic Aliases</TabsTrigger>
+          <TabsTrigger value="advanced-aliases">Advanced Aliases</TabsTrigger>
           <TabsTrigger value="dns">DNS Records</TabsTrigger>
           <TabsTrigger value="reputation">Reputation</TabsTrigger>
         </TabsList>
@@ -244,6 +246,10 @@ export default function DomainSettings() {
 
         <TabsContent value="aliases" className="space-y-6">
           <AliasManager domains={domains || []} />
+        </TabsContent>
+
+        <TabsContent value="advanced-aliases" className="space-y-6">
+          <AdvancedAliasManager domains={domains || []} />
         </TabsContent>
 
         <TabsContent value="dns" className="space-y-6">

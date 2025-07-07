@@ -2,6 +2,9 @@ import {
   users,
   domains,
   emailAliases,
+  forwardingRules,
+  forwardingDestinations,
+  forwardingLogs,
   contactLists,
   contacts,
   contactListMemberships,
@@ -16,6 +19,12 @@ import {
   type Domain,
   type InsertEmailAlias,
   type EmailAlias,
+  type InsertForwardingRule,
+  type ForwardingRule,
+  type InsertForwardingDestination,
+  type ForwardingDestination,
+  type InsertForwardingLog,
+  type ForwardingLog,
   type InsertContactList,
   type ContactList,
   type InsertContact,
@@ -49,6 +58,28 @@ export interface IStorage {
   getEmailAliasesByDomainId(domainId: number): Promise<EmailAlias[]>;
   updateEmailAlias(id: number, updates: Partial<EmailAlias>): Promise<EmailAlias>;
   deleteEmailAlias(id: number): Promise<void>;
+  
+  // Forwarding rule operations
+  createForwardingRule(rule: InsertForwardingRule): Promise<ForwardingRule>;
+  getForwardingRulesByAliasId(aliasId: number): Promise<ForwardingRule[]>;
+  updateForwardingRule(id: number, updates: Partial<ForwardingRule>): Promise<ForwardingRule>;
+  deleteForwardingRule(id: number): Promise<void>;
+  
+  // Forwarding destination operations
+  createForwardingDestination(destination: InsertForwardingDestination): Promise<ForwardingDestination>;
+  getForwardingDestinationsByAliasId(aliasId: number): Promise<ForwardingDestination[]>;
+  updateForwardingDestination(id: number, updates: Partial<ForwardingDestination>): Promise<ForwardingDestination>;
+  deleteForwardingDestination(id: number): Promise<void>;
+  
+  // Forwarding log operations
+  createForwardingLog(log: InsertForwardingLog): Promise<ForwardingLog>;
+  getForwardingLogsByAliasId(aliasId: number): Promise<ForwardingLog[]>;
+  getForwardingStats(aliasId: number): Promise<{
+    totalForwarded: number;
+    totalBlocked: number;
+    totalAutoReplied: number;
+    successRate: number;
+  }>;
   
   // Contact list operations
   createContactList(list: InsertContactList): Promise<ContactList>;
@@ -168,6 +199,120 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailAlias(id: number): Promise<void> {
     await db.delete(emailAliases).where(eq(emailAliases.id, id));
+  }
+
+  // Forwarding rule operations
+  async createForwardingRule(rule: InsertForwardingRule): Promise<ForwardingRule> {
+    const [forwardingRule] = await db
+      .insert(forwardingRules)
+      .values(rule)
+      .returning();
+    return forwardingRule;
+  }
+
+  async getForwardingRulesByAliasId(aliasId: number): Promise<ForwardingRule[]> {
+    return await db
+      .select()
+      .from(forwardingRules)
+      .where(eq(forwardingRules.aliasId, aliasId))
+      .orderBy(forwardingRules.priority);
+  }
+
+  async updateForwardingRule(id: number, updates: Partial<ForwardingRule>): Promise<ForwardingRule> {
+    const [rule] = await db
+      .update(forwardingRules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(forwardingRules.id, id))
+      .returning();
+    return rule;
+  }
+
+  async deleteForwardingRule(id: number): Promise<void> {
+    await db.delete(forwardingRules).where(eq(forwardingRules.id, id));
+  }
+
+  // Forwarding destination operations
+  async createForwardingDestination(destination: InsertForwardingDestination): Promise<ForwardingDestination> {
+    const [forwardingDestination] = await db
+      .insert(forwardingDestinations)
+      .values(destination)
+      .returning();
+    return forwardingDestination;
+  }
+
+  async getForwardingDestinationsByAliasId(aliasId: number): Promise<ForwardingDestination[]> {
+    return await db
+      .select()
+      .from(forwardingDestinations)
+      .where(eq(forwardingDestinations.aliasId, aliasId))
+      .orderBy(forwardingDestinations.createdAt);
+  }
+
+  async updateForwardingDestination(id: number, updates: Partial<ForwardingDestination>): Promise<ForwardingDestination> {
+    const [destination] = await db
+      .update(forwardingDestinations)
+      .set(updates)
+      .where(eq(forwardingDestinations.id, id))
+      .returning();
+    return destination;
+  }
+
+  async deleteForwardingDestination(id: number): Promise<void> {
+    await db.delete(forwardingDestinations).where(eq(forwardingDestinations.id, id));
+  }
+
+  // Forwarding log operations
+  async createForwardingLog(log: InsertForwardingLog): Promise<ForwardingLog> {
+    const [forwardingLog] = await db
+      .insert(forwardingLogs)
+      .values(log)
+      .returning();
+    return forwardingLog;
+  }
+
+  async getForwardingLogsByAliasId(aliasId: number): Promise<ForwardingLog[]> {
+    return await db
+      .select()
+      .from(forwardingLogs)
+      .where(eq(forwardingLogs.aliasId, aliasId))
+      .orderBy(desc(forwardingLogs.processedAt));
+  }
+
+  async getForwardingStats(aliasId: number): Promise<{
+    totalForwarded: number;
+    totalBlocked: number;
+    totalAutoReplied: number;
+    successRate: number;
+  }> {
+    const [forwardedCount] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(forwardingLogs)
+      .where(and(eq(forwardingLogs.aliasId, aliasId), eq(forwardingLogs.action, "forwarded")));
+
+    const [blockedCount] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(forwardingLogs)
+      .where(and(eq(forwardingLogs.aliasId, aliasId), eq(forwardingLogs.action, "blocked")));
+
+    const [autoRepliedCount] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(forwardingLogs)
+      .where(and(eq(forwardingLogs.aliasId, aliasId), eq(forwardingLogs.action, "auto_replied")));
+
+    const [successCount] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(forwardingLogs)
+      .where(and(eq(forwardingLogs.aliasId, aliasId), eq(forwardingLogs.status, "success")));
+
+    const totalLogs = forwardedCount.count + blockedCount.count + autoRepliedCount.count;
+    const successRate = totalLogs > 0 ? (successCount.count / totalLogs) * 100 : 0;
+
+    return {
+      totalForwarded: forwardedCount.count,
+      totalBlocked: blockedCount.count,
+      totalAutoReplied: autoRepliedCount.count,
+      successRate: Math.round(successRate * 100) / 100,
+    };
   }
 
   // Contact list operations

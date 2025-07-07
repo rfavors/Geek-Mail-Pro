@@ -5,7 +5,10 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { z } from "zod";
 import { 
   insertDomainSchema, 
-  insertEmailAliasSchema, 
+  insertEmailAliasSchema,
+  insertForwardingRuleSchema,
+  insertForwardingDestinationSchema,
+  insertForwardingLogSchema,
   insertContactListSchema, 
   insertContactSchema,
   insertCampaignSchema,
@@ -89,6 +92,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching email aliases:", error);
       res.status(500).json({ message: "Failed to fetch email aliases" });
+    }
+  });
+
+  app.patch('/api/email-aliases/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const alias = await storage.updateEmailAlias(Number(id), updates);
+      res.json(alias);
+    } catch (error) {
+      console.error("Error updating email alias:", error);
+      res.status(500).json({ message: "Failed to update email alias" });
+    }
+  });
+
+  app.delete('/api/email-aliases/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEmailAlias(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting email alias:", error);
+      res.status(500).json({ message: "Failed to delete email alias" });
+    }
+  });
+
+  // Forwarding rule routes
+  app.post('/api/forwarding-rules', isAuthenticated, async (req: any, res) => {
+    try {
+      const ruleData = insertForwardingRuleSchema.parse(req.body);
+      const rule = await storage.createForwardingRule(ruleData);
+      res.json(rule);
+    } catch (error) {
+      console.error("Error creating forwarding rule:", error);
+      res.status(500).json({ message: "Failed to create forwarding rule" });
+    }
+  });
+
+  app.get('/api/forwarding-rules/alias/:aliasId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { aliasId } = req.params;
+      const rules = await storage.getForwardingRulesByAliasId(Number(aliasId));
+      res.json(rules);
+    } catch (error) {
+      console.error("Error fetching forwarding rules:", error);
+      res.status(500).json({ message: "Failed to fetch forwarding rules" });
+    }
+  });
+
+  app.patch('/api/forwarding-rules/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const rule = await storage.updateForwardingRule(Number(id), updates);
+      res.json(rule);
+    } catch (error) {
+      console.error("Error updating forwarding rule:", error);
+      res.status(500).json({ message: "Failed to update forwarding rule" });
+    }
+  });
+
+  app.delete('/api/forwarding-rules/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteForwardingRule(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting forwarding rule:", error);
+      res.status(500).json({ message: "Failed to delete forwarding rule" });
+    }
+  });
+
+  // Forwarding destination routes
+  app.post('/api/forwarding-destinations', isAuthenticated, async (req: any, res) => {
+    try {
+      const destinationData = insertForwardingDestinationSchema.parse(req.body);
+      const destination = await storage.createForwardingDestination(destinationData);
+      res.json(destination);
+    } catch (error) {
+      console.error("Error creating forwarding destination:", error);
+      res.status(500).json({ message: "Failed to create forwarding destination" });
+    }
+  });
+
+  app.get('/api/forwarding-destinations/alias/:aliasId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { aliasId } = req.params;
+      const destinations = await storage.getForwardingDestinationsByAliasId(Number(aliasId));
+      res.json(destinations);
+    } catch (error) {
+      console.error("Error fetching forwarding destinations:", error);
+      res.status(500).json({ message: "Failed to fetch forwarding destinations" });
+    }
+  });
+
+  app.patch('/api/forwarding-destinations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const destination = await storage.updateForwardingDestination(Number(id), updates);
+      res.json(destination);
+    } catch (error) {
+      console.error("Error updating forwarding destination:", error);
+      res.status(500).json({ message: "Failed to update forwarding destination" });
+    }
+  });
+
+  app.delete('/api/forwarding-destinations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteForwardingDestination(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting forwarding destination:", error);
+      res.status(500).json({ message: "Failed to delete forwarding destination" });
+    }
+  });
+
+  // Forwarding log routes
+  app.get('/api/forwarding-logs/alias/:aliasId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { aliasId } = req.params;
+      const logs = await storage.getForwardingLogsByAliasId(Number(aliasId));
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching forwarding logs:", error);
+      res.status(500).json({ message: "Failed to fetch forwarding logs" });
+    }
+  });
+
+  app.get('/api/forwarding-stats/alias/:aliasId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { aliasId } = req.params;
+      const stats = await storage.getForwardingStats(Number(aliasId));
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching forwarding stats:", error);
+      res.status(500).json({ message: "Failed to fetch forwarding stats" });
     }
   });
 

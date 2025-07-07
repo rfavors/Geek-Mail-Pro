@@ -60,8 +60,53 @@ export const emailAliases = pgTable("email_aliases", {
   id: serial("id").primaryKey(),
   domainId: integer("domain_id").notNull().references(() => domains.id),
   alias: varchar("alias").notNull(), // e.g., "support", "marketing"
+  destination: varchar("destination"), // Primary destination email
   isVerified: boolean("is_verified").default(false),
+  isActive: boolean("is_active").default(true),
+  description: text("description"),
+  forwardingType: varchar("forwarding_type").default("simple"), // simple, conditional, split, round_robin
+  autoReply: boolean("auto_reply").default(false),
+  autoReplyMessage: text("auto_reply_message"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Advanced forwarding rules
+export const forwardingRules = pgTable("forwarding_rules", {
+  id: serial("id").primaryKey(),
+  aliasId: integer("alias_id").notNull().references(() => emailAliases.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  priority: integer("priority").default(1), // Lower number = higher priority
+  isActive: boolean("is_active").default(true),
+  conditions: jsonb("conditions").notNull(), // JSON conditions for when rule applies
+  actions: jsonb("actions").notNull(), // JSON actions to take when conditions match
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email forwarding destinations
+export const forwardingDestinations = pgTable("forwarding_destinations", {
+  id: serial("id").primaryKey(),
+  aliasId: integer("alias_id").notNull().references(() => emailAliases.id, { onDelete: "cascade" }),
+  email: varchar("email").notNull(),
+  name: varchar("name"),
+  weight: integer("weight").default(1), // For round-robin distribution
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Email forwarding logs
+export const forwardingLogs = pgTable("forwarding_logs", {
+  id: serial("id").primaryKey(),
+  aliasId: integer("alias_id").notNull().references(() => emailAliases.id, { onDelete: "cascade" }),
+  ruleId: integer("rule_id").references(() => forwardingRules.id),
+  fromEmail: varchar("from_email").notNull(),
+  toEmail: varchar("to_email").notNull(),
+  subject: varchar("subject"),
+  action: varchar("action").notNull(), // forwarded, blocked, auto_replied
+  status: varchar("status").default("pending"), // pending, success, failed
+  errorMessage: text("error_message"),
+  processedAt: timestamp("processed_at").defaultNow(),
 });
 
 // Contact lists
@@ -200,8 +245,25 @@ export const domainRelations = relations(domains, ({ one, many }) => ({
   aliases: many(emailAliases),
 }));
 
-export const emailAliasRelations = relations(emailAliases, ({ one }) => ({
+export const emailAliasRelations = relations(emailAliases, ({ one, many }) => ({
   domain: one(domains, { fields: [emailAliases.domainId], references: [domains.id] }),
+  forwardingRules: many(forwardingRules),
+  forwardingDestinations: many(forwardingDestinations),
+  forwardingLogs: many(forwardingLogs),
+}));
+
+export const forwardingRuleRelations = relations(forwardingRules, ({ one, many }) => ({
+  alias: one(emailAliases, { fields: [forwardingRules.aliasId], references: [emailAliases.id] }),
+  logs: many(forwardingLogs),
+}));
+
+export const forwardingDestinationRelations = relations(forwardingDestinations, ({ one }) => ({
+  alias: one(emailAliases, { fields: [forwardingDestinations.aliasId], references: [emailAliases.id] }),
+}));
+
+export const forwardingLogRelations = relations(forwardingLogs, ({ one }) => ({
+  alias: one(emailAliases, { fields: [forwardingLogs.aliasId], references: [emailAliases.id] }),
+  rule: one(forwardingRules, { fields: [forwardingLogs.ruleId], references: [forwardingRules.id] }),
 }));
 
 export const contactListRelations = relations(contactLists, ({ one, many }) => ({
@@ -250,6 +312,23 @@ export const insertDomainSchema = createInsertSchema(domains).omit({
 export const insertEmailAliasSchema = createInsertSchema(emailAliases).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const insertForwardingRuleSchema = createInsertSchema(forwardingRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertForwardingDestinationSchema = createInsertSchema(forwardingDestinations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertForwardingLogSchema = createInsertSchema(forwardingLogs).omit({
+  id: true,
+  processedAt: true,
 });
 
 export const insertContactListSchema = createInsertSchema(contactLists).omit({
@@ -306,6 +385,12 @@ export type InsertDomain = z.infer<typeof insertDomainSchema>;
 export type Domain = typeof domains.$inferSelect;
 export type InsertEmailAlias = z.infer<typeof insertEmailAliasSchema>;
 export type EmailAlias = typeof emailAliases.$inferSelect;
+export type InsertForwardingRule = z.infer<typeof insertForwardingRuleSchema>;
+export type ForwardingRule = typeof forwardingRules.$inferSelect;
+export type InsertForwardingDestination = z.infer<typeof insertForwardingDestinationSchema>;
+export type ForwardingDestination = typeof forwardingDestinations.$inferSelect;
+export type InsertForwardingLog = z.infer<typeof insertForwardingLogSchema>;
+export type ForwardingLog = typeof forwardingLogs.$inferSelect;
 export type InsertContactList = z.infer<typeof insertContactListSchema>;
 export type ContactList = typeof contactLists.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;
