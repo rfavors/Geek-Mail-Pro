@@ -10,6 +10,10 @@ import { Sidebar } from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import Campaigns from "@/pages/campaigns";
+import Contacts from "@/pages/contacts";
+import DomainSettings from "@/pages/domain-settings";
+import Billing from "@/pages/billing";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -52,12 +56,12 @@ function Router() {
         ) : (
           <>
             <Route path="/" component={Dashboard} />
-            <Route path="/campaigns" component={() => <div>Campaigns Page - Coming Soon</div>} />
-            <Route path="/contacts" component={() => <div>Contacts Page - Coming Soon</div>} />
-            <Route path="/domain-settings" component={() => <div>Domain Settings Page - Coming Soon</div>} />
-            <Route path="/analytics" component={() => <div>Analytics Page - Coming Soon</div>} />
-            <Route path="/billing" component={() => <div>Billing Page - Coming Soon</div>} />
-            <Route path="/settings" component={() => <div>Settings Page - Coming Soon</div>} />
+            <Route path="/campaigns" component={Campaigns} />
+            <Route path="/contacts" component={Contacts} />
+            <Route path="/domain-settings" component={DomainSettings} />
+            <Route path="/analytics" component={() => <div className="space-y-6"><h1 className="text-3xl font-bold">Analytics</h1><p className="text-muted-foreground">Detailed analytics coming soon...</p></div>} />
+            <Route path="/billing" component={Billing} />
+            <Route path="/settings" component={() => <div className="space-y-6"><h1 className="text-3xl font-bold">Settings</h1><p className="text-muted-foreground">Account settings coming soon...</p></div>} />
           </>
         )}
         <Route component={NotFound} />
