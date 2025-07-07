@@ -14,11 +14,13 @@ import {
   Zap,
   Settings,
   Mail,
-  BarChart3
+  BarChart3,
+  ExternalLink
 } from "lucide-react";
 import { DomainConfig } from "@/components/domain/domain-config";
 import { AliasManager } from "@/components/domain/alias-manager";
 import { AdvancedAliasManager } from "@/components/domain/advanced-alias-manager";
+import { EmailForwardingSetup } from "@/components/domain/email-forwarding-setup";
 import {
   Tabs,
   TabsContent,
@@ -171,6 +173,7 @@ export default function DomainSettings() {
           <TabsTrigger value="domains">Domains</TabsTrigger>
           <TabsTrigger value="aliases">Basic Aliases</TabsTrigger>
           <TabsTrigger value="advanced-aliases">Advanced Aliases</TabsTrigger>
+          <TabsTrigger value="forwarding">Email Forwarding</TabsTrigger>
           <TabsTrigger value="dns">DNS Records</TabsTrigger>
           <TabsTrigger value="reputation">Reputation</TabsTrigger>
         </TabsList>
@@ -250,6 +253,10 @@ export default function DomainSettings() {
 
         <TabsContent value="advanced-aliases" className="space-y-6">
           <AdvancedAliasManager domains={domains || []} />
+        </TabsContent>
+
+        <TabsContent value="forwarding" className="space-y-6">
+          <EmailForwardingSetup webhookUrl={`${window.location.origin}/api/webhook/email`} />
         </TabsContent>
 
         <TabsContent value="dns" className="space-y-6">
