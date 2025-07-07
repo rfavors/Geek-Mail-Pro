@@ -7,13 +7,15 @@ import {
   Globe, 
   BarChart3,
   Settings,
-  CreditCard
+  CreditCard,
+  Zap
 } from "lucide-react";
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Campaigns', href: '/campaigns', icon: Mail },
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Lead Generation', href: '/lead-generation', icon: Zap },
   { name: 'Domain Settings', href: '/domain-settings', icon: Globe },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Billing', href: '/billing', icon: CreditCard },

@@ -7,6 +7,9 @@ import {
   contactListMemberships,
   campaigns,
   campaignRecipients,
+  leadSources,
+  leads,
+  leadCampaigns,
   type User,
   type UpsertUser,
   type InsertDomain,
@@ -20,6 +23,12 @@ import {
   type InsertCampaign,
   type Campaign,
   type CampaignRecipient,
+  type InsertLeadSource,
+  type LeadSource,
+  type InsertLead,
+  type Lead,
+  type InsertLeadCampaign,
+  type LeadCampaign,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -71,6 +80,26 @@ export interface IStorage {
     avgClickRate: number;
     totalRevenue: number;
   }>;
+
+  // Lead source operations
+  createLeadSource(leadSource: InsertLeadSource): Promise<LeadSource>;
+  getLeadSourcesByUserId(userId: string): Promise<LeadSource[]>;
+  updateLeadSource(id: number, updates: Partial<LeadSource>): Promise<LeadSource>;
+  deleteLeadSource(id: number): Promise<void>;
+
+  // Lead operations
+  createLead(lead: InsertLead): Promise<Lead>;
+  getLeadsByUserId(userId: string): Promise<Lead[]>;
+  getLeadsBySourceId(sourceId: number): Promise<Lead[]>;
+  updateLead(id: number, updates: Partial<Lead>): Promise<Lead>;
+  deleteLead(id: number): Promise<void>;
+  convertLeadToContact(leadId: number, listId?: number): Promise<Contact>;
+
+  // Lead campaign operations
+  createLeadCampaign(campaign: InsertLeadCampaign): Promise<LeadCampaign>;
+  getLeadCampaignsByUserId(userId: string): Promise<LeadCampaign[]>;
+  updateLeadCampaign(id: number, updates: Partial<LeadCampaign>): Promise<LeadCampaign>;
+  deleteLeadCampaign(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -283,6 +312,137 @@ export class DatabaseStorage implements IStorage {
       avgClickRate: Number(avgRates?.avgClickRate) || 0,
       totalRevenue: 8429, // Mock revenue for demo
     };
+  }
+
+  // Lead source operations
+  async createLeadSource(leadSource: InsertLeadSource): Promise<LeadSource> {
+    const [source] = await db
+      .insert(leadSources)
+      .values(leadSource)
+      .returning();
+    return source;
+  }
+
+  async getLeadSourcesByUserId(userId: string): Promise<LeadSource[]> {
+    return await db
+      .select()
+      .from(leadSources)
+      .where(eq(leadSources.userId, userId))
+      .orderBy(desc(leadSources.createdAt));
+  }
+
+  async updateLeadSource(id: number, updates: Partial<LeadSource>): Promise<LeadSource> {
+    const [source] = await db
+      .update(leadSources)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(leadSources.id, id))
+      .returning();
+    return source;
+  }
+
+  async deleteLeadSource(id: number): Promise<void> {
+    await db.delete(leadSources).where(eq(leadSources.id, id));
+  }
+
+  // Lead operations
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [newLead] = await db
+      .insert(leads)
+      .values(lead)
+      .returning();
+    return newLead;
+  }
+
+  async getLeadsByUserId(userId: string): Promise<Lead[]> {
+    return await db
+      .select()
+      .from(leads)
+      .where(eq(leads.userId, userId))
+      .orderBy(desc(leads.createdAt));
+  }
+
+  async getLeadsBySourceId(sourceId: number): Promise<Lead[]> {
+    return await db
+      .select()
+      .from(leads)
+      .where(eq(leads.sourceId, sourceId))
+      .orderBy(desc(leads.createdAt));
+  }
+
+  async updateLead(id: number, updates: Partial<Lead>): Promise<Lead> {
+    const [lead] = await db
+      .update(leads)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(leads.id, id))
+      .returning();
+    return lead;
+  }
+
+  async deleteLead(id: number): Promise<void> {
+    await db.delete(leads).where(eq(leads.id, id));
+  }
+
+  async convertLeadToContact(leadId: number, listId?: number): Promise<Contact> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, leadId));
+    if (!lead) {
+      throw new Error("Lead not found");
+    }
+
+    // Create contact from lead
+    const [contact] = await db
+      .insert(contacts)
+      .values({
+        userId: lead.userId,
+        email: lead.email,
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        company: lead.company,
+        tags: lead.tags,
+      })
+      .returning();
+
+    // Add to list if specified
+    if (listId) {
+      await this.addContactToList(contact.id, listId);
+    }
+
+    // Update lead status
+    await this.updateLead(leadId, {
+      status: "converted",
+      convertedToContactAt: new Date(),
+    });
+
+    return contact;
+  }
+
+  // Lead campaign operations
+  async createLeadCampaign(campaign: InsertLeadCampaign): Promise<LeadCampaign> {
+    const [leadCampaign] = await db
+      .insert(leadCampaigns)
+      .values(campaign)
+      .returning();
+    return leadCampaign;
+  }
+
+  async getLeadCampaignsByUserId(userId: string): Promise<LeadCampaign[]> {
+    return await db
+      .select()
+      .from(leadCampaigns)
+      .where(eq(leadCampaigns.userId, userId))
+      .orderBy(desc(leadCampaigns.createdAt));
+  }
+
+  async updateLeadCampaign(id: number, updates: Partial<LeadCampaign>): Promise<LeadCampaign> {
+    const [campaign] = await db
+      .update(leadCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(leadCampaigns.id, id))
+      .returning();
+    return campaign;
+  }
+
+  async deleteLeadCampaign(id: number): Promise<void> {
+    await db.delete(leadCampaigns).where(eq(leadCampaigns.id, id));
   }
 }
 

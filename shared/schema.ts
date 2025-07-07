@@ -131,12 +131,68 @@ export const campaignRecipients = pgTable("campaign_recipients", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Lead generation tables
+export const leadSources = pgTable("lead_sources", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  type: varchar("type").notNull(), // linkedin, website, social, api, manual
+  config: jsonb("config").notNull(), // Source-specific configuration
+  isActive: boolean("is_active").default(true),
+  totalLeads: integer("total_leads").default(0),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leads = pgTable("leads", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sourceId: integer("source_id").references(() => leadSources.id, { onDelete: "cascade" }),
+  email: varchar("email").notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  company: varchar("company"),
+  jobTitle: varchar("job_title"),
+  linkedinUrl: varchar("linkedin_url"),
+  website: varchar("website"),
+  phone: varchar("phone"),
+  location: varchar("location"),
+  industry: varchar("industry"),
+  score: integer("score").default(0), // Lead quality score 0-100
+  status: varchar("status").default("new"), // new, qualified, contacted, converted, rejected
+  tags: text("tags").array(),
+  notes: text("notes"),
+  metadata: jsonb("metadata"), // Additional data from source
+  convertedToContactAt: timestamp("converted_to_contact_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leadCampaigns = pgTable("lead_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  sourceIds: integer("source_ids").array(),
+  filters: jsonb("filters"), // Lead filtering criteria
+  status: varchar("status").default("active"), // active, paused, completed
+  totalLeads: integer("total_leads").default(0),
+  qualifiedLeads: integer("qualified_leads").default(0),
+  convertedLeads: integer("converted_leads").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const userRelations = relations(users, ({ many }) => ({
   domains: many(domains),
   contactLists: many(contactLists),
   contacts: many(contacts),
   campaigns: many(campaigns),
+  leadSources: many(leadSources),
+  leads: many(leads),
+  leadCampaigns: many(leadCampaigns),
 }));
 
 export const domainRelations = relations(domains, ({ one, many }) => ({
@@ -162,6 +218,20 @@ export const contactRelations = relations(contacts, ({ one, many }) => ({
 export const campaignRelations = relations(campaigns, ({ one, many }) => ({
   user: one(users, { fields: [campaigns.userId], references: [users.id] }),
   recipients: many(campaignRecipients),
+}));
+
+export const leadSourceRelations = relations(leadSources, ({ one, many }) => ({
+  user: one(users, { fields: [leadSources.userId], references: [users.id] }),
+  leads: many(leads),
+}));
+
+export const leadRelations = relations(leads, ({ one }) => ({
+  user: one(users, { fields: [leads.userId], references: [users.id] }),
+  source: one(leadSources, { fields: [leads.sourceId], references: [leadSources.id] }),
+}));
+
+export const leadCampaignRelations = relations(leadCampaigns, ({ one }) => ({
+  user: one(users, { fields: [leadCampaigns.userId], references: [users.id] }),
 }));
 
 // Insert schemas
@@ -205,6 +275,30 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   createdAt: true,
 });
 
+export const insertLeadSourceSchema = createInsertSchema(leadSources).omit({
+  id: true,
+  totalLeads: true,
+  lastSyncAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeadSchema = createInsertSchema(leads).omit({
+  id: true,
+  convertedToContactAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeadCampaignSchema = createInsertSchema(leadCampaigns).omit({
+  id: true,
+  totalLeads: true,
+  qualifiedLeads: true,
+  convertedLeads: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -219,3 +313,9 @@ export type Contact = typeof contacts.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
+export type InsertLeadSource = z.infer<typeof insertLeadSourceSchema>;
+export type LeadSource = typeof leadSources.$inferSelect;
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Lead = typeof leads.$inferSelect;
+export type InsertLeadCampaign = z.infer<typeof insertLeadCampaignSchema>;
+export type LeadCampaign = typeof leadCampaigns.$inferSelect;

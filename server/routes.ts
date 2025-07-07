@@ -8,7 +8,10 @@ import {
   insertEmailAliasSchema, 
   insertContactListSchema, 
   insertContactSchema,
-  insertCampaignSchema 
+  insertCampaignSchema,
+  insertLeadSourceSchema,
+  insertLeadSchema,
+  insertLeadCampaignSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -270,6 +273,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing webhook:", error);
       res.status(500).json({ message: "Webhook error" });
+    }
+  });
+
+  // Lead source routes
+  app.post('/api/lead-sources', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const leadSourceData = insertLeadSourceSchema.parse({ ...req.body, userId });
+      
+      const leadSource = await storage.createLeadSource(leadSourceData);
+      res.json(leadSource);
+    } catch (error) {
+      console.error("Error creating lead source:", error);
+      res.status(500).json({ message: "Failed to create lead source" });
+    }
+  });
+
+  app.get('/api/lead-sources', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const leadSources = await storage.getLeadSourcesByUserId(userId);
+      res.json(leadSources);
+    } catch (error) {
+      console.error("Error fetching lead sources:", error);
+      res.status(500).json({ message: "Failed to fetch lead sources" });
+    }
+  });
+
+  app.patch('/api/lead-sources/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const leadSource = await storage.updateLeadSource(Number(id), updates);
+      res.json(leadSource);
+    } catch (error) {
+      console.error("Error updating lead source:", error);
+      res.status(500).json({ message: "Failed to update lead source" });
+    }
+  });
+
+  app.delete('/api/lead-sources/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLeadSource(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead source:", error);
+      res.status(500).json({ message: "Failed to delete lead source" });
+    }
+  });
+
+  // Lead routes
+  app.post('/api/leads', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const leadData = insertLeadSchema.parse({ ...req.body, userId });
+      
+      const lead = await storage.createLead(leadData);
+      res.json(lead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ message: "Failed to create lead" });
+    }
+  });
+
+  app.get('/api/leads', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sourceId } = req.query;
+      
+      if (sourceId) {
+        const leads = await storage.getLeadsBySourceId(Number(sourceId));
+        res.json(leads);
+      } else {
+        const leads = await storage.getLeadsByUserId(userId);
+        res.json(leads);
+      }
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ message: "Failed to fetch leads" });
+    }
+  });
+
+  app.patch('/api/leads/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const lead = await storage.updateLead(Number(id), updates);
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ message: "Failed to update lead" });
+    }
+  });
+
+  app.delete('/api/leads/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLead(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      res.status(500).json({ message: "Failed to delete lead" });
+    }
+  });
+
+  app.post('/api/leads/:id/convert', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { listId } = req.body;
+      
+      const contact = await storage.convertLeadToContact(Number(id), listId);
+      res.json(contact);
+    } catch (error) {
+      console.error("Error converting lead:", error);
+      res.status(500).json({ message: "Failed to convert lead" });
+    }
+  });
+
+  // Lead campaign routes
+  app.post('/api/lead-campaigns', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const campaignData = insertLeadCampaignSchema.parse({ ...req.body, userId });
+      
+      const campaign = await storage.createLeadCampaign(campaignData);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating lead campaign:", error);
+      res.status(500).json({ message: "Failed to create lead campaign" });
+    }
+  });
+
+  app.get('/api/lead-campaigns', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const campaigns = await storage.getLeadCampaignsByUserId(userId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching lead campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch lead campaigns" });
+    }
+  });
+
+  app.patch('/api/lead-campaigns/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const campaign = await storage.updateLeadCampaign(Number(id), updates);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating lead campaign:", error);
+      res.status(500).json({ message: "Failed to update lead campaign" });
+    }
+  });
+
+  app.delete('/api/lead-campaigns/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLeadCampaign(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead campaign:", error);
+      res.status(500).json({ message: "Failed to delete lead campaign" });
     }
   });
 
