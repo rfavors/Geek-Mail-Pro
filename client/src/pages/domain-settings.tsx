@@ -13,7 +13,8 @@ import {
   Shield,
   Zap,
   Settings,
-  Mail
+  Mail,
+  BarChart3
 } from "lucide-react";
 import { DomainConfig } from "@/components/domain/domain-config";
 import { AliasManager } from "@/components/domain/alias-manager";
