@@ -1,0 +1,114 @@
+Absolutely! Here’s a **Replit AI build prompt** that will generate a modern, full-featured email marketing SaaS—**Mail-Geek**—with a feature set comparable to Mailchimp. This will include email campaign creation, list management, automations, templates, analytics, and self-hosting readiness (with Docker/Coolify deployment). Test credentials, monetization flows, and light/dark mode included.
+
+---
+
+## 🧠 **Mail-Geek: Replit Build Prompt**
+
+**Prompt for Replit AI:**
+
+---
+
+### Build "Mail-Geek" — a self-hosted SaaS email marketing platform similar to Mailchimp. Core features:
+
+#### **1. User Authentication & Plans**
+
+* Landing page: modern, responsive, Mailchimp-style branding (“Mail-Geek” mascot/logo, fun nerdy colors).
+* Auth: Register, login, forgot password, email verification (via SendGrid or Resend API).
+* Payment integration: Stripe for monthly/annual plans with feature/limit tiers (starter, pro, enterprise).
+* User dashboard: Manage subscription, billing, upgrade/cancel, usage stats.
+
+#### **2. Audience/List Management**
+
+* Create/import/export contact lists (CSV upload/download).
+* Custom fields per contact (e.g., name, email, company, tags).
+* List segmentation and filtering (by tags, opens, etc.).
+
+#### **3. Email Campaign Builder**
+
+* Drag-and-drop (or rich text) campaign editor for building beautiful emails.
+* Template library: starter templates, ability to save user templates.
+* Preview and test email (send to self).
+* Schedule or send immediately.
+
+#### **4. Automation**
+
+* Visual workflow builder: create automations (welcome series, abandoned cart, drip campaigns).
+* Triggers: new subscriber, date-based, link click, etc.
+* Email sequence scheduling.
+
+#### **5. Campaign Analytics**
+
+* Dashboard with open rates, click rates, bounces, unsubscribes, engagement by segment.
+* Export reports as CSV.
+
+#### **6. Compliance**
+
+* Auto-add unsubscribe link in all emails.
+* Store unsubscribe requests and support double opt-in.
+* GDPR settings: user can request data export/delete.
+
+#### **7. API & Integrations**
+
+* REST API for adding subscribers, triggering campaigns, fetching analytics (API key per user).
+* Webhook support for integrations (e.g., new signup triggers, campaign finished).
+
+#### **8. Team/Agency Features**
+
+* Multi-user workspaces (invite team, assign roles: admin, editor, viewer).
+* Sub-account management for agencies.
+
+#### **9. Tech Stack**
+
+* Frontend: React (Vite), TailwindCSS, persistent light/dark mode toggle.
+* Backend: Node.js (Express), PostgreSQL (or MongoDB Atlas for dev), Socket.IO for real-time updates.
+* Email sending: SendGrid or Resend API (use sandbox for dev/test).
+* Payments: Stripe API.
+* Docker-ready for self-hosting (Coolify deploy config).
+* .env example with all required keys.
+
+#### **10. Demo/Test Credentials**
+
+* Seed demo accounts:
+
+  * Demo user: `testuser@mailgeek.com` / `TestUser123!`
+  * Demo admin: `admin@mailgeek.com` / `AdminUser123!`
+* Test Stripe: use [Stripe test cards](https://stripe.com/docs/testing).
+* Test SendGrid/Resend: use sandbox mode, do not send real mail.
+
+#### **11. UI/UX & Extras**
+
+* Mail-Geek logo (mascot: “geeky robot with glasses and envelope”).
+* Responsive, modern, friendly dashboard.
+* Built-in help/FAQ section and contact support form.
+* Terms, privacy, GDPR/CCPA footer links.
+
+---
+
+**Instructions for Replit:**
+
+> Generate the complete full-stack code for this app, including backend (Node/Express), frontend (React), PostgreSQL/MongoDB integration, email sending, payments, automation engine, analytics, multi-user roles, and all above features. Include Dockerfile and deploy instructions for Coolify. Don’t stop until all buttons, links, and functionality of the app are complete by testing and fixing all necessary functions and operations before stopping operation and asking for input from me. Use the test credentials provided for easy testing. Make sure a persistent light/dark mode toggle is implemented. Assume sensible API key names for .env (e.g., STRIPE\_KEY, SENDGRID\_KEY, DB\_URI, etc.).
+
+---
+
+**API Keys Required:**
+
+* STRIPE\_SECRET\_KEY (test/prod)
+* SENDGRID\_API\_KEY or RESEND\_API\_KEY
+* DATABASE\_URL (Postgres/Mongo)
+* JWT\_SECRET (auth)
+* Any third-party integration keys
+
+---
+
+**Test Credentials:**
+
+* User: `testuser@mailgeek.com` / `TestUser123!`
+* Admin: `admin@mailgeek.com` / `AdminUser123!`
+* Stripe: 4242 4242 4242 4242 (test card)
+* SendGrid/Resend: sandbox mode
+
+---
+
+**Copy & Paste This Prompt into Replit AI to Generate Mail-Geek**
+
+Let me know if you want an **MVP-only version, staging deploy script, or migration strategy** from another email platform!
