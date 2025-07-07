@@ -48,6 +48,9 @@ const aliasSchema = z.object({
     .min(1, "Alias is required")
     .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/, "Invalid alias format")
     .max(64, "Alias must be 64 characters or less"),
+  destination: z.string()
+    .email("Please enter a valid email address")
+    .min(1, "Destination email is required"),
 });
 
 type AliasFormData = z.infer<typeof aliasSchema>;
@@ -68,6 +71,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
     resolver: zodResolver(aliasSchema),
     defaultValues: {
       alias: "",
+      destination: "",
     },
   });
 
@@ -217,6 +221,27 @@ export function AliasManager({ domains }: AliasManagerProps) {
                       )}
                     />
 
+                    <FormField
+                      control={form.control}
+                      name="destination"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Forward To Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="rfavors@gmail.com" 
+                              type="email"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            All emails sent to this alias will be forwarded to this address
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>Alias Guidelines</AlertTitle>
@@ -270,6 +295,11 @@ export function AliasManager({ domains }: AliasManagerProps) {
                       <h3 className="font-semibold">
                         {alias.alias}@{primaryDomain.domain}
                       </h3>
+                      {alias.destination && (
+                        <p className="text-sm text-muted-foreground">
+                          Forwards to: {alias.destination}
+                        </p>
+                      )}
                       <div className="flex items-center space-x-4 mt-1">
                         <Badge variant={alias.isVerified ? "default" : "destructive"} className="text-xs">
                           {alias.isVerified ? (
