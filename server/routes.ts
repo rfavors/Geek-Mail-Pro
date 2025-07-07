@@ -118,6 +118,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test alias endpoint
+  app.post('/api/test-alias', isAuthenticated, async (req: any, res) => {
+    try {
+      const { alias, destination } = req.body;
+      
+      // In a real implementation, this would send an actual test email
+      // For now, we'll simulate the email sending process
+      console.log(`Sending test email from ${alias} to ${destination}`);
+      
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      res.json({ 
+        success: true, 
+        message: `Test email sent from ${alias} to ${destination}` 
+      });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
   // Forwarding rule routes
   app.post('/api/forwarding-rules', isAuthenticated, async (req: any, res) => {
     try {

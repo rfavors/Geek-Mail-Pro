@@ -64,6 +64,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const primaryDomain = domains.find(d => d.domain === "thegeektrepreneur.com") || domains[0];
 
@@ -116,9 +117,8 @@ export function AliasManager({ domains }: AliasManagerProps) {
   });
 
   const testAliasMutation = useMutation({
-    mutationFn: async (aliasEmail: string) => {
-      // Mock test email sending
-      return new Promise(resolve => setTimeout(resolve, 2000));
+    mutationFn: async (aliasData: { alias: string; destination: string }) => {
+      return await apiRequest("POST", `/api/test-alias`, aliasData);
     },
     onSuccess: () => {
       toast({
@@ -135,13 +135,55 @@ export function AliasManager({ domains }: AliasManagerProps) {
     },
   });
 
+  const deleteAliasMutation = useMutation({
+    mutationFn: async (aliasId: number) => {
+      return await apiRequest("DELETE", `/api/email-aliases/${aliasId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/domains/${primaryDomain?.id}/aliases`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
+      toast({
+        title: "Alias Deleted",
+        description: "Email alias has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete email alias. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: AliasFormData) => {
     createAliasMutation.mutate(data);
   };
 
-  const handleTestAlias = (alias: string) => {
-    const fullEmail = `${alias}@${primaryDomain?.domain}`;
-    testAliasMutation.mutate(fullEmail);
+  const handleTestAlias = (aliasData: any) => {
+    if (!aliasData.destination) {
+      toast({
+        title: "No Destination Set",
+        description: "Please set a forwarding destination before testing the alias.",
+        variant: "destructive",
+      });
+      return;
+    }
+    testAliasMutation.mutate({
+      alias: `${aliasData.alias}@${primaryDomain?.domain}`,
+      destination: aliasData.destination
+    });
+  };
+
+  const handleDeleteAlias = (aliasId: number) => {
+    setDeleteConfirmId(aliasId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteAliasMutation.mutate(deleteConfirmId);
+      setDeleteConfirmId(null);
+    }
   };
 
   const displayAliases = aliases || [];
@@ -324,17 +366,32 @@ export function AliasManager({ domains }: AliasManagerProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleTestAlias(alias.alias)}
+                      onClick={() => handleTestAlias(alias)}
                       disabled={testAliasMutation.isPending}
                     >
                       <TestTube className="h-4 w-4 mr-1" />
-                      Test
+                      {testAliasMutation.isPending ? "Testing..." : "Test"}
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        toast({
+                          title: "Advanced Configuration",
+                          description: "Switch to the Advanced Aliases tab for detailed configuration options.",
+                        });
+                      }}
+                    >
                       <Settings className="h-4 w-4 mr-1" />
                       Configure
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteAlias(alias.id)}
+                      disabled={deleteAliasMutation.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -397,6 +454,33 @@ export function AliasManager({ domains }: AliasManagerProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Email Alias</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this email alias? This action cannot be undone and will stop all email forwarding for this alias.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteAliasMutation.isPending}
+            >
+              {deleteAliasMutation.isPending ? "Deleting..." : "Delete Alias"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
