@@ -185,7 +185,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEmailAliasesByDomainId(domainId: number): Promise<EmailAlias[]> {
-    return await db.select().from(emailAliases).where(eq(emailAliases.domainId, domainId));
+    return await db
+      .select()
+      .from(emailAliases)
+      .where(eq(emailAliases.domainId, domainId))
+      .orderBy(emailAliases.createdAt);
   }
 
   async updateEmailAlias(id: number, updates: Partial<EmailAlias>): Promise<EmailAlias> {

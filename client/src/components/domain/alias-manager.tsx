@@ -83,6 +83,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/domains", primaryDomain?.id, "aliases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
       toast({
         title: "Email Alias Created",
         description: "Your email alias has been created successfully!",
@@ -139,11 +140,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
     testAliasMutation.mutate(fullEmail);
   };
 
-  const mockAliases = aliases || [
-    { id: 1, alias: "support", isVerified: true, createdAt: new Date().toISOString() },
-    { id: 2, alias: "marketing", isVerified: true, createdAt: new Date().toISOString() },
-    { id: 3, alias: "newsletter", isVerified: true, createdAt: new Date().toISOString() },
-  ];
+  const displayAliases = aliases || [];
 
   if (!primaryDomain) {
     return (
@@ -261,9 +258,9 @@ export function AliasManager({ domains }: AliasManagerProps) {
                 </div>
               ))}
             </div>
-          ) : mockAliases.length > 0 ? (
+          ) : displayAliases.length > 0 ? (
             <div className="space-y-4">
-              {mockAliases.map((alias: any) => (
+              {displayAliases.map((alias: any) => (
                 <div key={alias.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center text-white">

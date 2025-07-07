@@ -193,6 +193,7 @@ export function AdvancedAliasManager({ domains }: AdvancedAliasManagerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/domains", primaryDomain.id, "aliases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
       setIsAliasDialogOpen(false);
       aliasForm.reset();
       toast({
@@ -477,7 +478,7 @@ export function AdvancedAliasManager({ domains }: AdvancedAliasManagerProps) {
                           {alias.alias}@{primaryDomain?.domain}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {alias.forwardingType.replace("_", " ")}
+                          {alias.forwardingType?.replace("_", " ") || "Simple"}
                         </div>
                       </div>
                       <div className="flex items-center space-x-1">
@@ -533,7 +534,7 @@ export function AdvancedAliasManager({ domains }: AdvancedAliasManagerProps) {
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">Forwarding Type</Label>
                         <p className="font-medium capitalize">
-                          {selectedAlias.forwardingType.replace("_", " ")}
+                          {selectedAlias.forwardingType?.replace("_", " ") || "Simple"}
                         </p>
                       </div>
                       <div>
