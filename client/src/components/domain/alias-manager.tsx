@@ -72,7 +72,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
   });
 
   const { data: aliases, isLoading: aliasesLoading } = useQuery({
-    queryKey: ["/api/domains", primaryDomain?.id, "aliases"],
+    queryKey: [`/api/domains/${primaryDomain?.id}/aliases`],
     enabled: !!primaryDomain?.id,
   });
 
@@ -82,7 +82,7 @@ export function AliasManager({ domains }: AliasManagerProps) {
       return await apiRequest("POST", `/api/domains/${primaryDomain.id}/aliases`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/domains", primaryDomain?.id, "aliases"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/domains/${primaryDomain?.id}/aliases`] });
       queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
       toast({
         title: "Email Alias Created",

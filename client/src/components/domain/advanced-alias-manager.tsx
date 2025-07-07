@@ -134,7 +134,7 @@ export function AdvancedAliasManager({ domains }: AdvancedAliasManagerProps) {
   const primaryDomain = domains.find(d => d.domain === "thegeektrepreneur.com") || domains[0];
 
   const { data: aliases, isLoading: aliasesLoading } = useQuery({
-    queryKey: ["/api/domains", primaryDomain?.id, "aliases"],
+    queryKey: [`/api/domains/${primaryDomain?.id}/aliases`],
     enabled: !!primaryDomain?.id,
   });
 
@@ -192,7 +192,7 @@ export function AdvancedAliasManager({ domains }: AdvancedAliasManagerProps) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/domains", primaryDomain.id, "aliases"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/domains/${primaryDomain.id}/aliases`] });
       queryClient.invalidateQueries({ queryKey: ["/api/domains"] });
       setIsAliasDialogOpen(false);
       aliasForm.reset();
