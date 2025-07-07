@@ -1,8 +1,8 @@
-# Mail-Geek - Email Marketing SaaS Platform
+# Geek Mail Pro - Email Marketing SaaS Platform
 
 ## Overview
 
-Mail-Geek is a modern, full-featured email marketing SaaS platform built as a self-hosted alternative to services like Mailchimp. The application provides comprehensive email campaign management, contact list management, domain configuration, and analytics capabilities. It's designed to be a complete solution for businesses looking to manage their email marketing operations.
+Geek Mail Pro is a modern, full-featured email marketing SaaS platform built as a self-hosted alternative to services like Mailchimp. The application provides comprehensive email campaign management, contact list management, domain configuration, and analytics capabilities. It's designed to be a complete solution for businesses looking to manage their email marketing operations.
 
 ## System Architecture
 

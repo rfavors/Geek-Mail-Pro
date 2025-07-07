@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Email content
       const mailOptions = {
-        from: `"Mail-Geek Test" <${process.env.SMTP_USER || 'noreply@thegeektrepreneur.com'}>`,
+        from: `"Geek Mail Pro Test" <${process.env.SMTP_USER || 'noreply@thegeektrepreneur.com'}>`,
         to: destination,
         subject: `Test Email from ${alias}`,
         html: `
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             </div>
             <p>If you received this email, your alias forwarding is set up correctly!</p>
             <hr>
-            <p style="color: #666; font-size: 12px;">This test email was sent from your Mail-Geek platform.</p>
+            <p style="color: #666; font-size: 12px;">This test email was sent from your Geek Mail Pro platform.</p>
           </div>
         `
       };

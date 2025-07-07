@@ -75,7 +75,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="mail-geek-theme">
+      <ThemeProvider defaultTheme="system" storageKey="geek-mail-pro-theme">
         <TooltipProvider>
           <Toaster />
           <Router />

@@ -33,7 +33,7 @@ export default function Landing() {
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
                 <Bot className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">Mail-Geek</span>
+              <span className="text-xl font-bold">Geek Mail Pro</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -91,7 +91,7 @@ export default function Landing() {
               <CardContent className="p-0">
                 <img 
                   src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800" 
-                  alt="Mail-Geek Dashboard Interface" 
+                  alt="Geek Mail Pro Dashboard Interface" 
                   className="w-full rounded-lg"
                 />
               </CardContent>
@@ -451,7 +451,7 @@ export default function Landing() {
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
                   <Bot className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-white">Mail-Geek</span>
+                <span className="text-xl font-bold text-white">Geek Mail Pro</span>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
                 Professional email marketing for geeks. Build better campaigns, 
@@ -497,7 +497,7 @@ export default function Landing() {
 
           <div className="border-t border-gray-700 mt-12 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 Mail-Geek. All rights reserved. Made with ❤️ for email marketing geeks worldwide.
+              © 2025 Geek Mail Pro. All rights reserved. Made with ❤️ for email marketing geeks worldwide.
             </p>
           </div>
         </div>
