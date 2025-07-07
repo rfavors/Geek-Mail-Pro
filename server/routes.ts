@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import nodemailer from "nodemailer";
+import { emailForwardingService, type IncomingEmail } from "./emailForwarding";
 import { z } from "zod";
 import { 
   insertDomainSchema, 
@@ -189,6 +190,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in test alias endpoint:", error);
       res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
+  // Email webhook endpoint for receiving emails
+  app.post('/api/webhook/email', async (req, res) => {
+    try {
+      console.log('Received email webhook:', req.body);
+      
+      const incomingEmail: IncomingEmail = {
+        to: req.body.to || req.body.recipient,
+        from: req.body.from || req.body.sender,
+        subject: req.body.subject || 'No Subject',
+        html: req.body.html,
+        text: req.body.text,
+        headers: req.body.headers || {},
+        attachments: req.body.attachments
+      };
+
+      const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
+      
+      if (forwarded) {
+        res.json({ status: 'forwarded', message: 'Email successfully forwarded' });
+      } else {
+        res.json({ status: 'ignored', message: 'Email not forwarded (no matching alias)' });
+      }
+      
+    } catch (error) {
+      console.error('Email webhook error:', error);
+      res.status(500).json({ error: 'Failed to process incoming email' });
+    }
+  });
+
+  // Manual email forwarding test endpoint
+  app.post('/api/test-forwarding', isAuthenticated, async (req: any, res) => {
+    try {
+      const { alias, fromEmail, subject, content } = req.body;
+      
+      const testEmail: IncomingEmail = {
+        to: `${alias}@thegeektrepreneur.com`,
+        from: fromEmail || 'test@example.com',
+        subject: subject || 'Test Email',
+        text: content || 'This is a test email to verify forwarding functionality.',
+        html: `<p>${content || 'This is a test email to verify forwarding functionality.'}</p>`,
+        headers: {}
+      };
+
+      const forwarded = await emailForwardingService.forwardEmail(testEmail);
+      
+      if (forwarded) {
+        res.json({ 
+          success: true, 
+          message: `Test email forwarded successfully from ${testEmail.to}` 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: `No forwarding configured for ${alias}@thegeektrepreneur.com` 
+        });
+      }
+      
+    } catch (error) {
+      console.error('Test forwarding error:', error);
+      res.status(500).json({ message: "Failed to test email forwarding" });
     }
   });
 

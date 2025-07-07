@@ -193,6 +193,43 @@ export function AliasManager({ domains }: AliasManagerProps) {
     }
   };
 
+  const testForwardingMutation = useMutation({
+    mutationFn: async (data: { alias: string; fromEmail: string; subject: string; content: string }) => {
+      return await apiRequest("POST", `/api/test-forwarding`, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Forwarding Test Sent",
+        description: "A test email has been sent to verify forwarding functionality.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Forwarding Test Failed",
+        description: "Failed to test email forwarding. Please check your configuration.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleTestForwarding = (aliasData: any) => {
+    if (!aliasData.destination) {
+      toast({
+        title: "No Destination Set",
+        description: "Please set a forwarding destination before testing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    testForwardingMutation.mutate({
+      alias: aliasData.alias,
+      fromEmail: "test@example.com",
+      subject: "Test Email Forwarding",
+      content: "This is a test email to verify that incoming emails are properly forwarded to your destination email address."
+    });
+  };
+
   const displayAliases = aliases || [];
 
   if (!primaryDomain) {
@@ -530,6 +567,19 @@ export function AliasManager({ domains }: AliasManagerProps) {
                   >
                     <TestTube className="h-4 w-4 mr-2" />
                     {testingAliasId === configureAlias?.id ? "Testing..." : "Send Test Email"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      if (configureAlias) {
+                        handleTestForwarding(configureAlias);
+                      }
+                    }}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Forwarding
                   </Button>
                   <Button 
                     variant="outline" 

@@ -56,6 +56,7 @@ export interface IStorage {
   // Email alias operations
   createEmailAlias(alias: InsertEmailAlias): Promise<EmailAlias>;
   getEmailAliasesByDomainId(domainId: number): Promise<EmailAlias[]>;
+  getEmailAliasesByDomain(domainId: number): Promise<EmailAlias[]>;
   updateEmailAlias(id: number, updates: Partial<EmailAlias>): Promise<EmailAlias>;
   deleteEmailAlias(id: number): Promise<void>;
   
@@ -185,6 +186,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEmailAliasesByDomainId(domainId: number): Promise<EmailAlias[]> {
+    return await db
+      .select()
+      .from(emailAliases)
+      .where(eq(emailAliases.domainId, domainId))
+      .orderBy(emailAliases.createdAt);
+  }
+
+  async getEmailAliasesByDomain(domainId: number): Promise<EmailAlias[]> {
     return await db
       .select()
       .from(emailAliases)
