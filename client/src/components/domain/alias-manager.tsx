@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { 
   Mail, 
   Plus, 
@@ -65,6 +66,8 @@ export function AliasManager({ domains }: AliasManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [configureAlias, setConfigureAlias] = useState<any | null>(null);
+  const [testingAliasId, setTestingAliasId] = useState<number | null>(null);
 
   const primaryDomain = domains.find(d => d.domain === "thegeektrepreneur.com") || domains[0];
 
@@ -117,16 +120,18 @@ export function AliasManager({ domains }: AliasManagerProps) {
   });
 
   const testAliasMutation = useMutation({
-    mutationFn: async (aliasData: { alias: string; destination: string }) => {
+    mutationFn: async (aliasData: { alias: string; destination: string; aliasId: number }) => {
       return await apiRequest("POST", `/api/test-alias`, aliasData);
     },
     onSuccess: () => {
+      setTestingAliasId(null);
       toast({
         title: "Test Email Sent",
         description: "A test email has been sent to verify your alias configuration.",
       });
     },
     onError: () => {
+      setTestingAliasId(null);
       toast({
         title: "Test Failed",
         description: "Failed to send test email. Please check your alias configuration.",
@@ -169,9 +174,11 @@ export function AliasManager({ domains }: AliasManagerProps) {
       });
       return;
     }
+    setTestingAliasId(aliasData.id);
     testAliasMutation.mutate({
       alias: `${aliasData.alias}@${primaryDomain?.domain}`,
-      destination: aliasData.destination
+      destination: aliasData.destination,
+      aliasId: aliasData.id
     });
   };
 
@@ -367,20 +374,15 @@ export function AliasManager({ domains }: AliasManagerProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleTestAlias(alias)}
-                      disabled={testAliasMutation.isPending}
+                      disabled={testingAliasId === alias.id}
                     >
                       <TestTube className="h-4 w-4 mr-1" />
-                      {testAliasMutation.isPending ? "Testing..." : "Test"}
+                      {testingAliasId === alias.id ? "Testing..." : "Test"}
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => {
-                        toast({
-                          title: "Advanced Configuration",
-                          description: "Switch to the Advanced Aliases tab for detailed configuration options.",
-                        });
-                      }}
+                      onClick={() => setConfigureAlias(alias)}
                     >
                       <Settings className="h-4 w-4 mr-1" />
                       Configure
@@ -477,6 +479,111 @@ export function AliasManager({ domains }: AliasManagerProps) {
               disabled={deleteAliasMutation.isPending}
             >
               {deleteAliasMutation.isPending ? "Deleting..." : "Delete Alias"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Configure Alias Dialog */}
+      <Dialog open={!!configureAlias} onOpenChange={() => setConfigureAlias(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Configure Email Alias</DialogTitle>
+            <DialogDescription>
+              Manage settings for {configureAlias?.alias}@{primaryDomain?.domain}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3">Alias Information</h3>
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Email Address</Label>
+                    <p className="font-medium">{configureAlias?.alias}@{primaryDomain?.domain}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Forwarding Destination</Label>
+                    <p className="font-medium">{configureAlias?.destination || "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Status</Label>
+                    <Badge variant={configureAlias?.isVerified ? "default" : "secondary"}>
+                      {configureAlias?.isVerified ? "Active" : "Pending"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium mb-3">Quick Actions</h3>
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      if (configureAlias) {
+                        handleTestAlias(configureAlias);
+                      }
+                    }}
+                    disabled={testingAliasId === configureAlias?.id}
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    {testingAliasId === configureAlias?.id ? "Testing..." : "Send Test Email"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      toast({
+                        title: "Advanced Settings",
+                        description: "Switch to the Advanced Aliases tab for detailed forwarding rules and automation settings.",
+                      });
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Advanced Settings
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-3">Usage Statistics</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">0</p>
+                  <p className="text-sm text-muted-foreground">Emails Forwarded</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">100%</p>
+                  <p className="text-sm text-muted-foreground">Success Rate</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">0</p>
+                  <p className="text-sm text-muted-foreground">Auto Replies</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfigureAlias(null)}
+            >
+              Close
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (configureAlias) {
+                  handleDeleteAlias(configureAlias.id);
+                  setConfigureAlias(null);
+                }
+              }}
+            >
+              Delete Alias
             </Button>
           </div>
         </DialogContent>
