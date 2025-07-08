@@ -4,17 +4,28 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Webhook endpoint - completely isolated from middleware
+// Health check for webhook accessibility
+app.get('/api/webhook/email', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    message: 'Webhook endpoint is accessible and ready to receive emails'
+  });
+});
+
+// Webhook endpoint - completely isolated from middleware  
 app.use('/api/webhook/email', (req, res, next) => {
   // Skip all other middleware for this route
   if (req.method === 'POST') {
     express.urlencoded({ extended: true })(req, res, async () => {
       try {
         console.log('=== MAILGUN WEBHOOK RECEIVED ===');
+        console.log('Timestamp:', new Date().toISOString());
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('Content-Type:', req.headers['content-type']);
         console.log('Method:', req.method);
         console.log('URL:', req.url);
+        console.log('All Headers:', JSON.stringify(req.headers, null, 2));
         
         // Check if this is a test request with empty body
         if (!req.body || Object.keys(req.body).length === 0) {
