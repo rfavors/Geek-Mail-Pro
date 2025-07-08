@@ -17,68 +17,83 @@ app.get('/api/webhook/email', (req, res) => {
 app.use('/api/webhook/email', (req, res, next) => {
   // Skip all other middleware for this route
   if (req.method === 'POST') {
-    express.urlencoded({ extended: true })(req, res, async () => {
-      try {
-        console.log('=== MAILGUN WEBHOOK RECEIVED ===');
-        console.log('Timestamp:', new Date().toISOString());
-        console.log('Source: Route Test or Real Email');
-        console.log('Body:', JSON.stringify(req.body, null, 2));
-        console.log('Content-Type:', req.headers['content-type']);
-        console.log('User-Agent:', req.headers['user-agent']);
-        console.log('Method:', req.method);
-        console.log('URL:', req.url);
-        
-        // Check if this is a test request with empty body
-        if (!req.body || Object.keys(req.body).length === 0) {
-          // This is a test POST from Mailgun without real data
-          res.status(200).json({ 
-            status: 'test', 
-            message: 'Webhook endpoint is working! Ready to receive emails.' 
-          });
-          return;
-        }
-
-        // Check if we have required email fields
-        const recipient = req.body.recipient || req.body.to;
-        if (!recipient) {
-          res.status(200).json({ 
-            status: 'ignored', 
-            message: 'No recipient specified in webhook data' 
-          });
-          return;
-        }
-        
-        // Import here to avoid circular dependency
-        const { emailForwardingService } = await import("./emailForwarding");
-        
-        const incomingEmail = {
-          to: recipient,
-          from: req.body.sender || req.body.from || 'unknown@example.com',
-          subject: req.body.subject || 'No Subject',
-          html: req.body['body-html'] || req.body.html || '',
-          text: req.body['body-plain'] || req.body.text || '',
-          headers: {},
-          attachments: []
-        };
-
-        console.log('Processing email for:', incomingEmail.to);
-
-        const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
-        
-        res.status(200).json({ 
-          status: forwarded ? 'forwarded' : 'ignored', 
-          message: forwarded ? 'Email successfully forwarded' : 'No matching alias found' 
+    // Handle both multipart and urlencoded data from Mailgun
+    const multer = require('multer');
+    const upload = multer();
+    
+    upload.any()(req, res, async (err) => {
+      if (err) {
+        console.log('Multer error, trying urlencoded:', err.message);
+        return express.urlencoded({ extended: true })(req, res, async () => {
+          await handleWebhook(req, res);
         });
-          
-      } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(200).json({ error: 'Processing failed', details: error.message });
       }
+      await handleWebhook(req, res);
     });
   } else {
     next();
   }
 });
+
+async function handleWebhook(req: any, res: any) {
+  try {
+    console.log('=== MAILGUN WEBHOOK RECEIVED ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Source: Route Test or Real Email');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Files:', req.files);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('User-Agent:', req.headers['user-agent']);
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    
+    // Check if this is a test request with empty body
+    if (!req.body || Object.keys(req.body).length === 0) {
+      // This is a test POST from Mailgun without real data
+      res.status(200).json({ 
+        status: 'test', 
+        message: 'Webhook endpoint is working! Ready to receive emails.' 
+      });
+      return;
+    }
+
+    // Check if we have required email fields
+    const recipient = req.body.recipient || req.body.to;
+    if (!recipient) {
+      res.status(200).json({ 
+        status: 'ignored', 
+        message: 'No recipient specified in webhook data' 
+      });
+      return;
+    }
+    
+    // Import here to avoid circular dependency
+    const { emailForwardingService } = await import("./emailForwarding");
+    
+    const incomingEmail = {
+      to: recipient,
+      from: req.body.sender || req.body.from || 'unknown@example.com',
+      subject: req.body.subject || 'No Subject',
+      html: req.body['body-html'] || req.body.html || '',
+      text: req.body['body-plain'] || req.body.text || '',
+      headers: {},
+      attachments: []
+    };
+
+    console.log('Processing email for:', incomingEmail.to);
+
+    const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
+    
+    res.status(200).json({ 
+      status: forwarded ? 'forwarded' : 'ignored', 
+      message: forwarded ? 'Email successfully forwarded' : 'No matching alias found' 
+    });
+      
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(200).json({ error: 'Processing failed', details: error.message });
+  }
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
