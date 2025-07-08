@@ -26,6 +26,12 @@ export class EmailForwardingService {
 
   async forwardEmail(incomingEmail: IncomingEmail): Promise<boolean> {
     try {
+      // Check if we have a valid email address
+      if (!incomingEmail.to || !incomingEmail.to.includes('@')) {
+        console.log('Invalid email address:', incomingEmail.to);
+        return false;
+      }
+
       // Extract alias from the 'to' field
       const emailAddress = incomingEmail.to.toLowerCase();
       const [alias, domain] = emailAddress.split('@');
@@ -72,17 +78,22 @@ export class EmailForwardingService {
     } catch (error) {
       console.error('Email forwarding failed:', error);
       
-      // Log the error
-      if (alias) {
+      // Log the error - with safe variable access
+      try {
+        const emailParts = incomingEmail.to?.split('@') || [];
+        const alias = emailParts[0] || 'unknown';
+        
         await storage.createForwardingLog({
-          aliasId: aliasConfig?.id || 0,
-          fromEmail: incomingEmail.from,
-          toEmail: aliasConfig?.destination || 'unknown',
-          subject: incomingEmail.subject,
+          aliasId: 0, // Will be 0 for failed attempts
+          fromEmail: incomingEmail.from || 'unknown',
+          toEmail: 'unknown',
+          subject: incomingEmail.subject || 'No subject',
           status: 'failed',
           forwardedAt: new Date(),
           errorMessage: error instanceof Error ? error.message : 'Unknown error'
         });
+      } catch (logError) {
+        console.error('Failed to log error:', logError);
       }
       
       return false;
