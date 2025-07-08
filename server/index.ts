@@ -3,6 +3,38 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Webhook endpoint FIRST - before any other middleware
+app.post('/api/webhook/email', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    console.log('Mailgun webhook received:', req.body);
+    
+    // Import here to avoid circular dependency
+    const { emailForwardingService } = await import("./emailForwarding");
+    
+    const incomingEmail = {
+      to: req.body.recipient || req.body.to,
+      from: req.body.sender || req.body.from,
+      subject: req.body.subject || 'No Subject',
+      html: req.body['body-html'] || req.body.html,
+      text: req.body['body-plain'] || req.body.text,
+      headers: {},
+      attachments: []
+    };
+
+    const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
+    
+    res.status(200).json({ 
+      status: forwarded ? 'forwarded' : 'ignored', 
+      message: forwarded ? 'Email successfully forwarded' : 'No matching alias' 
+    });
+      
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
