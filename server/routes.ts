@@ -193,27 +193,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email webhook endpoint for receiving emails
+  // Email webhook endpoint for receiving emails (public endpoint - no auth required)
   app.post('/api/webhook/email', async (req, res) => {
     try {
-      console.log('Received email webhook:', req.body);
+      console.log('Received email webhook from Mailgun:', req.body);
       
+      // Mailgun sends form-encoded data with specific field names
       const incomingEmail: IncomingEmail = {
-        to: req.body.to || req.body.recipient,
-        from: req.body.from || req.body.sender,
+        to: req.body.recipient || req.body.to,
+        from: req.body.sender || req.body.from,
         subject: req.body.subject || 'No Subject',
-        html: req.body.html,
-        text: req.body.text,
-        headers: req.body.headers || {},
-        attachments: req.body.attachments
+        html: req.body['body-html'] || req.body.html,
+        text: req.body['body-plain'] || req.body.text,
+        headers: {},
+        attachments: []
       };
+
+      console.log('Parsed incoming email:', incomingEmail);
 
       const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
       
       if (forwarded) {
-        res.json({ status: 'forwarded', message: 'Email successfully forwarded' });
+        res.status(200).json({ status: 'forwarded', message: 'Email successfully forwarded' });
       } else {
-        res.json({ status: 'ignored', message: 'Email not forwarded (no matching alias)' });
+        res.status(200).json({ status: 'ignored', message: 'Email not forwarded (no matching alias)' });
       }
       
     } catch (error) {
