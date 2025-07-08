@@ -20,6 +20,38 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Email webhook endpoint (MUST be before auth setup - no auth required)
+  app.post('/api/webhook/email', async (req, res) => {
+    try {
+      console.log('Received email webhook from Mailgun:', req.body);
+      
+      // Mailgun sends form-encoded data with specific field names
+      const incomingEmail: IncomingEmail = {
+        to: req.body.recipient || req.body.to,
+        from: req.body.sender || req.body.from,
+        subject: req.body.subject || 'No Subject',
+        html: req.body['body-html'] || req.body.html,
+        text: req.body['body-plain'] || req.body.text,
+        headers: {},
+        attachments: []
+      };
+
+      console.log('Parsed incoming email:', incomingEmail);
+
+      const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
+      
+      if (forwarded) {
+        res.status(200).json({ status: 'forwarded', message: 'Email successfully forwarded' });
+      } else {
+        res.status(200).json({ status: 'ignored', message: 'Email not forwarded (no matching alias)' });
+      }
+      
+    } catch (error) {
+      console.error('Email webhook error:', error);
+      res.status(500).json({ error: 'Failed to process incoming email' });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -193,37 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email webhook endpoint for receiving emails (public endpoint - no auth required)
-  app.post('/api/webhook/email', async (req, res) => {
-    try {
-      console.log('Received email webhook from Mailgun:', req.body);
-      
-      // Mailgun sends form-encoded data with specific field names
-      const incomingEmail: IncomingEmail = {
-        to: req.body.recipient || req.body.to,
-        from: req.body.sender || req.body.from,
-        subject: req.body.subject || 'No Subject',
-        html: req.body['body-html'] || req.body.html,
-        text: req.body['body-plain'] || req.body.text,
-        headers: {},
-        attachments: []
-      };
 
-      console.log('Parsed incoming email:', incomingEmail);
-
-      const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
-      
-      if (forwarded) {
-        res.status(200).json({ status: 'forwarded', message: 'Email successfully forwarded' });
-      } else {
-        res.status(200).json({ status: 'ignored', message: 'Email not forwarded (no matching alias)' });
-      }
-      
-    } catch (error) {
-      console.error('Email webhook error:', error);
-      res.status(500).json({ error: 'Failed to process incoming email' });
-    }
-  });
 
   // Manual email forwarding test endpoint
   app.post('/api/test-forwarding', isAuthenticated, async (req: any, res) => {
