@@ -4,34 +4,41 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Webhook endpoint FIRST - before any other middleware
-app.post('/api/webhook/email', express.urlencoded({ extended: true }), async (req, res) => {
-  try {
-    console.log('Mailgun webhook received:', req.body);
-    
-    // Import here to avoid circular dependency
-    const { emailForwardingService } = await import("./emailForwarding");
-    
-    const incomingEmail = {
-      to: req.body.recipient || req.body.to,
-      from: req.body.sender || req.body.from,
-      subject: req.body.subject || 'No Subject',
-      html: req.body['body-html'] || req.body.html,
-      text: req.body['body-plain'] || req.body.text,
-      headers: {},
-      attachments: []
-    };
+// Webhook endpoint - completely isolated from middleware
+app.use('/api/webhook/email', (req, res, next) => {
+  // Skip all other middleware for this route
+  if (req.method === 'POST') {
+    express.urlencoded({ extended: true })(req, res, async () => {
+      try {
+        console.log('Mailgun webhook received:', req.body);
+        
+        // Import here to avoid circular dependency
+        const { emailForwardingService } = await import("./emailForwarding");
+        
+        const incomingEmail = {
+          to: req.body.recipient || req.body.to,
+          from: req.body.sender || req.body.from,
+          subject: req.body.subject || 'No Subject',
+          html: req.body['body-html'] || req.body.html,
+          text: req.body['body-plain'] || req.body.text,
+          headers: {},
+          attachments: []
+        };
 
-    const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
-    
-    res.status(200).json({ 
-      status: forwarded ? 'forwarded' : 'ignored', 
-      message: forwarded ? 'Email successfully forwarded' : 'No matching alias' 
+        const forwarded = await emailForwardingService.forwardEmail(incomingEmail);
+        
+        res.status(200).json({ 
+          status: forwarded ? 'forwarded' : 'ignored', 
+          message: forwarded ? 'Email successfully forwarded' : 'No matching alias' 
+        });
+          
+      } catch (error) {
+        console.error('Webhook error:', error);
+        res.status(500).json({ error: 'Processing failed' });
+      }
     });
-      
-  } catch (error) {
-    console.error('Webhook error:', error);
-    res.status(500).json({ error: 'Processing failed' });
+  } else {
+    next();
   }
 });
 
