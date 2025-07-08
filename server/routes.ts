@@ -22,6 +22,34 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
 
 
+  // Test endpoint for manual email forwarding (for debugging)
+  app.post('/api/test-forward', async (req, res) => {
+    try {
+      console.log('Manual test forwarding triggered');
+      
+      const testEmail = {
+        to: 'marketing@thegeektrepreneur.com',
+        from: 'rfavors@gmail.com',
+        subject: 'Test Email Forward',
+        html: '<p>This is a test email to verify forwarding works</p>',
+        text: 'This is a test email to verify forwarding works',
+        headers: {},
+        attachments: []
+      };
+
+      const forwarded = await emailForwardingService.forwardEmail(testEmail);
+      
+      res.json({ 
+        success: forwarded,
+        message: forwarded ? 'Test email forwarded successfully' : 'Forwarding failed - check logs'
+      });
+      
+    } catch (error) {
+      console.error('Test forward error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 

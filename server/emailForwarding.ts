@@ -42,13 +42,19 @@ export class EmailForwardingService {
       }
 
       // Find the alias configuration in database
+      console.log(`Looking for alias: ${alias} in domain thegeektrepreneur.com`);
       const aliases = await storage.getEmailAliasesByDomain(1); // thegeektrepreneur.com domain ID
+      console.log(`Found ${aliases.length} aliases:`, aliases.map(a => a.alias));
+      
       const aliasConfig = aliases.find(a => a.alias.toLowerCase() === alias);
 
       if (!aliasConfig || !aliasConfig.destination) {
         console.log(`No forwarding configured for alias: ${alias}`);
+        console.log('Available aliases:', aliases.map(a => `${a.alias} -> ${a.destination}`));
         return false;
       }
+
+      console.log(`Found alias config: ${aliasConfig.alias} -> ${aliasConfig.destination}`);
 
       // Forward the email
       const forwardedEmail = {
@@ -60,7 +66,11 @@ export class EmailForwardingService {
         replyTo: incomingEmail.from
       };
 
-      await this.transporter.sendMail(forwardedEmail);
+      console.log(`Attempting to forward email from ${incomingEmail.from} to ${aliasConfig.destination}`);
+      console.log('SMTP Config:', { user: process.env.SMTP_USER, hasPassword: !!process.env.SMTP_PASS });
+      
+      const result = await this.transporter.sendMail(forwardedEmail);
+      console.log('Email forwarding result:', result);
 
       // Log the forwarding
       await storage.createForwardingLog({
@@ -68,8 +78,9 @@ export class EmailForwardingService {
         fromEmail: incomingEmail.from,
         toEmail: aliasConfig.destination,
         subject: incomingEmail.subject,
+        action: 'forward',
         status: 'forwarded',
-        forwardedAt: new Date()
+        processedAt: new Date()
       });
 
       console.log(`Email forwarded from ${emailAddress} to ${aliasConfig.destination}`);
@@ -88,8 +99,9 @@ export class EmailForwardingService {
           fromEmail: incomingEmail.from || 'unknown',
           toEmail: 'unknown',
           subject: incomingEmail.subject || 'No subject',
+          action: 'forward',
           status: 'failed',
-          forwardedAt: new Date(),
+          processedAt: new Date(),
           errorMessage: error instanceof Error ? error.message : 'Unknown error'
         });
       } catch (logError) {

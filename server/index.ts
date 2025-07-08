@@ -10,8 +10,11 @@ app.use('/api/webhook/email', (req, res, next) => {
   if (req.method === 'POST') {
     express.urlencoded({ extended: true })(req, res, async () => {
       try {
-        console.log('Mailgun webhook received:', req.body);
-        console.log('Headers:', req.headers);
+        console.log('=== MAILGUN WEBHOOK RECEIVED ===');
+        console.log('Body:', JSON.stringify(req.body, null, 2));
+        console.log('Content-Type:', req.headers['content-type']);
+        console.log('Method:', req.method);
+        console.log('URL:', req.url);
         
         // Check if this is a test request with empty body
         if (!req.body || Object.keys(req.body).length === 0) {
