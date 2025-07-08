@@ -87,7 +87,7 @@ export default function LeadGeneration() {
 
   const createLeadSourceMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/lead-sources", "POST", data);
+      return await apiRequest("POST", "/api/lead-sources", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lead-sources"] });
@@ -142,7 +142,7 @@ export default function LeadGeneration() {
 
       // Create leads in batches
       for (const lead of mockLeads) {
-        await apiRequest("/api/leads", "POST", lead);
+        await apiRequest("POST", "/api/leads", lead);
       }
 
       return mockLeads;
