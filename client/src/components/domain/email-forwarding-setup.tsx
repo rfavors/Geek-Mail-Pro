@@ -143,15 +143,19 @@ export function EmailForwardingSetup({ webhookUrl }: EmailForwardingSetupProps) 
           {/* Quick Start */}
           <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
             <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-              Quick Start Guide
+              Finding Email Forwarding in Mailgun
             </h4>
-            <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-              <li>Create Mailgun account and add thegeektrepreneur.com domain</li>
-              <li>Copy DNS records from Mailgun and add to your domain registrar</li>
-              <li>Wait for DNS verification (usually 15-30 minutes)</li>
-              <li>Create email route: Forward *.thegeektrepreneur.com to webhook URL</li>
-              <li>Test by sending email to marketing@thegeektrepreneur.com</li>
-            </ol>
+            <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+              <p><strong>Email forwarding is called "Routes" in Mailgun:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Look for <strong>"Routes"</strong> in the left sidebar</li>
+                <li>Or check under <strong>"Receiving"</strong> section</li>
+                <li>Some versions show it as <strong>"Email Routing"</strong></li>
+                <li>Click <strong>"Create Route"</strong> to set up forwarding</li>
+                <li>Use filter: <code>.*@thegeektrepreneur.com</code></li>
+                <li>Action: Forward to your webhook URL</li>
+              </ol>
+            </div>
           </div>
 
           {/* Action Buttons */}
