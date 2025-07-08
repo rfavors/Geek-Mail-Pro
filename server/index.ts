@@ -21,11 +21,12 @@ app.use('/api/webhook/email', (req, res, next) => {
       try {
         console.log('=== MAILGUN WEBHOOK RECEIVED ===');
         console.log('Timestamp:', new Date().toISOString());
+        console.log('Source: Route Test or Real Email');
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('Content-Type:', req.headers['content-type']);
+        console.log('User-Agent:', req.headers['user-agent']);
         console.log('Method:', req.method);
         console.log('URL:', req.url);
-        console.log('All Headers:', JSON.stringify(req.headers, null, 2));
         
         // Check if this is a test request with empty body
         if (!req.body || Object.keys(req.body).length === 0) {
