@@ -13,14 +13,22 @@ app.use('/api/webhook/email', (req, res, next) => {
         console.log('Mailgun webhook received:', req.body);
         console.log('Headers:', req.headers);
         
-        // For testing, if no data provided, use test data
-        const testEmail = req.body.recipient || req.body.to;
-        
-        if (!testEmail) {
+        // Check if this is a test request with empty body
+        if (!req.body || Object.keys(req.body).length === 0) {
           // This is a test POST from Mailgun without real data
           res.status(200).json({ 
             status: 'test', 
             message: 'Webhook endpoint is working! Ready to receive emails.' 
+          });
+          return;
+        }
+
+        // Check if we have required email fields
+        const recipient = req.body.recipient || req.body.to;
+        if (!recipient) {
+          res.status(200).json({ 
+            status: 'ignored', 
+            message: 'No recipient specified in webhook data' 
           });
           return;
         }
@@ -29,11 +37,11 @@ app.use('/api/webhook/email', (req, res, next) => {
         const { emailForwardingService } = await import("./emailForwarding");
         
         const incomingEmail = {
-          to: req.body.recipient || req.body.to || 'marketing@thegeektrepreneur.com',
-          from: req.body.sender || req.body.from || 'test@example.com',
-          subject: req.body.subject || 'Test Email',
-          html: req.body['body-html'] || req.body.html || '<p>Test email content</p>',
-          text: req.body['body-plain'] || req.body.text || 'Test email content',
+          to: recipient,
+          from: req.body.sender || req.body.from || 'unknown@example.com',
+          subject: req.body.subject || 'No Subject',
+          html: req.body['body-html'] || req.body.html || '',
+          text: req.body['body-plain'] || req.body.text || '',
           headers: {},
           attachments: []
         };
