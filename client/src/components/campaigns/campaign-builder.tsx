@@ -187,7 +187,8 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
   ]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [editingComponent, setEditingComponent] = useState<EmailComponent | null>(null);
-  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
+  const [draggedItem, setDraggedItem] = useState<{ type: string; src?: string } | null>(null);
+  const [logoLibrary, setLogoLibrary] = useState<string[]>([]);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
@@ -427,11 +428,73 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
     formData.append('image', file);
     
     try {
-      setUploadingImage(true);
       const response = await apiRequest('POST', '/api/upload/image', formData);
       return response.url;
-    } finally {
-      setUploadingImage(false);
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+  };
+
+  const uploadLogo = async (file: File): Promise<string> => {
+    const url = await uploadImage(file);
+    setLogoLibrary(prev => [...prev, url]);
+    return url;
+  };
+
+  const handleDragStart = (e: React.DragEvent, type: string, src?: string) => {
+    setDraggedItem({ type, src });
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: React.DragEvent, insertIndex?: number) => {
+    e.preventDefault();
+    
+    if (!draggedItem) return;
+
+    const targetIndex = insertIndex !== undefined ? insertIndex : emailComponents.length;
+    
+    const newComponent: EmailComponent = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: draggedItem.type as EmailComponent['type'],
+      content: draggedItem.src ? 
+        { src: draggedItem.src, alt: 'Dragged image' } : 
+        getDefaultContent(draggedItem.type as EmailComponent['type']),
+      styles: getDefaultStyles(draggedItem.type as EmailComponent['type'])
+    };
+
+    const newComponents = [...emailComponents];
+    newComponents.splice(targetIndex, 0, newComponent);
+    setEmailComponents(newComponents);
+    setDraggedItem(null);
+  };
+
+  const handleFileDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) return;
+
+    for (const file of imageFiles) {
+      try {
+        const url = await uploadImage(file);
+        const newComponent: EmailComponent = {
+          id: Math.random().toString(36).substr(2, 9),
+          type: 'image',
+          content: { src: url, alt: file.name },
+          styles: getDefaultStyles('image')
+        };
+        setEmailComponents(prev => [...prev, newComponent]);
+      } catch (error) {
+        console.error('Failed to upload file:', file.name, error);
+      }
     }
   };
 
@@ -574,38 +637,69 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant="outline" 
-                className="h-16 flex flex-col items-center justify-center"
-                onClick={() => addComponent('text')}
+              <div 
+                draggable
+                onDragStart={(e) => handleDragStart(e, 'text')}
+                className="h-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-grab hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <Type className="h-4 w-4 mb-1" />
                 <span className="text-xs">Text</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-16 flex flex-col items-center justify-center"
-                onClick={() => addComponent('image')}
+              </div>
+              <div 
+                draggable
+                onDragStart={(e) => handleDragStart(e, 'image')}
+                className="h-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-grab hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <ImageIcon className="h-4 w-4 mb-1" />
                 <span className="text-xs">Image</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-16 flex flex-col items-center justify-center"
-                onClick={() => addComponent('button')}
+              </div>
+              <div 
+                draggable
+                onDragStart={(e) => handleDragStart(e, 'button')}
+                className="h-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-grab hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <Link className="h-4 w-4 mb-1" />
                 <span className="text-xs">Button</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-16 flex flex-col items-center justify-center"
-                onClick={() => addComponent('divider')}
+              </div>
+              <div 
+                draggable
+                onDragStart={(e) => handleDragStart(e, 'divider')}
+                className="h-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-grab hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <Minus className="h-4 w-4 mb-1" />
                 <span className="text-xs">Divider</span>
-              </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Logo Library */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Logo Library</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <LogoUpload onUpload={uploadLogo} />
+              <div className="grid grid-cols-2 gap-2">
+                {logoLibrary.map((logoUrl, index) => (
+                  <div
+                    key={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, 'image', logoUrl)}
+                    className="relative group cursor-grab hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src={logoUrl}
+                      alt={`Logo ${index + 1}`}
+                      className="w-full h-16 object-contain border rounded-lg bg-gray-50"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                      <span className="text-white text-xs">Drag to canvas</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -660,42 +754,85 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
               <div className={`mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden ${
                 previewDevice === "mobile" ? "max-w-sm" : "max-w-2xl"
               }`}>
-                <div className="email-builder-canvas">
-                  {emailComponents.map((component, index) => (
-                    <div
-                      key={component.id}
-                      className={`component-wrapper relative group ${
-                        selectedComponent === component.id ? 'ring-2 ring-blue-500' : ''
-                      }`}
-                      onClick={() => setSelectedComponent(component.id)}
-                    >
-                      <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="flex space-x-1 bg-white border rounded p-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingComponent(component);
-                            }}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteComponent(component.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+                <div 
+                  className="email-builder-canvas min-h-[400px]"
+                  onDragOver={handleDragOver}
+                  onDrop={handleFileDrop}
+                >
+                  {emailComponents.length === 0 ? (
+                    <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg">
+                      <div className="text-center">
+                        <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500">Drag elements here to build your email</p>
+                        <p className="text-sm text-gray-400">Or drop image files directly</p>
                       </div>
-                      <EmailComponentRenderer component={component} />
                     </div>
-                  ))}
+                  ) : (
+                    emailComponents.map((component, index) => (
+                      <div key={component.id}>
+                        {/* Drop zone before component */}
+                        <div
+                          className="drop-zone h-2 opacity-0 hover:opacity-100 transition-opacity border-2 border-dashed border-blue-500 rounded"
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, index)}
+                        />
+                        
+                        <div
+                          className={`component-wrapper relative group ${
+                            selectedComponent === component.id ? 'ring-2 ring-blue-500' : ''
+                          }`}
+                          onClick={() => setSelectedComponent(component.id)}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', component.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                        >
+                          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="flex space-x-1 bg-white border rounded p-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingComponent(component);
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteComponent(component.id);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="cursor-grab"
+                              >
+                                <GripVertical className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <EmailComponentRenderer component={component} />
+                        </div>
+                        
+                        {/* Drop zone after last component */}
+                        {index === emailComponents.length - 1 && (
+                          <div
+                            className="drop-zone h-2 opacity-0 hover:opacity-100 transition-opacity border-2 border-dashed border-blue-500 rounded"
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, index + 1)}
+                          />
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -858,7 +995,7 @@ function ComponentEditor({
               </div>
               <ImageUpload
                 onUpload={(url) => updateContent('src', url)}
-                disabled={uploadingImage}
+                disabled={false}
               />
             </div>
           </div>
@@ -941,6 +1078,85 @@ function ComponentEditor({
         <Trash2 className="h-4 w-4 mr-2" />
         Delete Component
       </Button>
+    </div>
+  );
+}
+
+// Logo Upload Component
+function LogoUpload({ onUpload }: { onUpload: (url: string) => Promise<string> }) {
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, GIF, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      await onUpload(file);
+      
+      toast({
+        title: "Logo uploaded",
+        description: "Your logo has been added to the library!",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        disabled={uploading}
+        className="hidden"
+        id="logo-upload"
+      />
+      <label htmlFor="logo-upload">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          className="w-full cursor-pointer"
+          asChild
+        >
+          <div>
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Uploading...' : 'Upload Logo'}
+          </div>
+        </Button>
+      </label>
     </div>
   );
 }
