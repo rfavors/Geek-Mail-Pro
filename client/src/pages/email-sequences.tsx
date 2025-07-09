@@ -289,6 +289,7 @@ export default function EmailSequences() {
   const { toast } = useToast();
   const [selectedSequence, setSelectedSequence] = useState(null);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -328,6 +329,11 @@ export default function EmailSequences() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/email-sequences"] });
+      setIsBuilderOpen(false);
+      setSelectedSequence(null);
+      setIsEditing(false);
+      setNodes(initialNodes);
+      setEdges([]);
       toast({
         title: "Success",
         description: "Email sequence updated successfully",
@@ -337,6 +343,27 @@ export default function EmailSequences() {
       toast({
         title: "Error",
         description: "Failed to update email sequence",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete sequence mutation
+  const deleteSequenceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/email-sequences/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-sequences"] });
+      toast({
+        title: "Success",
+        description: "Email sequence deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete email sequence",
         variant: "destructive",
       });
     },
@@ -395,15 +422,62 @@ export default function EmailSequences() {
     };
 
     const sequenceData = {
-      name: 'My Email Sequence',
-      description: 'Automated email sequence',
-      triggerType: 'signup',
+      name: selectedSequence?.name || 'My Email Sequence',
+      description: selectedSequence?.description || 'Automated email sequence',
+      triggerType: selectedSequence?.triggerType || 'signup',
       flowData,
-      status: 'draft',
+      status: selectedSequence?.status || 'draft',
     };
 
-    createSequenceMutation.mutate(sequenceData);
-  }, [nodes, edges, createSequenceMutation]);
+    if (isEditing && selectedSequence) {
+      // Update existing sequence
+      updateSequenceMutation.mutate({
+        id: selectedSequence.id,
+        data: sequenceData
+      });
+    } else {
+      // Create new sequence
+      createSequenceMutation.mutate(sequenceData);
+      setIsBuilderOpen(false);
+      setNodes(initialNodes);
+      setEdges([]);
+    }
+  }, [nodes, edges, selectedSequence, isEditing, createSequenceMutation, updateSequenceMutation, setNodes, setEdges]);
+
+  // Open builder for new sequence
+  const openNewSequenceBuilder = useCallback(() => {
+    setSelectedSequence(null);
+    setIsEditing(false);
+    setNodes(initialNodes);
+    setEdges([]);
+    setSelectedNode(null);
+    setIsBuilderOpen(true);
+  }, [setNodes, setEdges]);
+
+  // Open builder for editing existing sequence
+  const openEditSequenceBuilder = useCallback((sequence) => {
+    setSelectedSequence(sequence);
+    setIsEditing(true);
+    
+    // Load sequence flow data if available
+    if (sequence.flowData) {
+      setNodes(sequence.flowData.nodes || initialNodes);
+      setEdges(sequence.flowData.edges || []);
+    } else {
+      setNodes(initialNodes);
+      setEdges([]);
+    }
+    
+    setSelectedNode(null);
+    setIsBuilderOpen(true);
+  }, [setNodes, setEdges]);
+
+  // Delete sequence
+  const handleDeleteSequence = useCallback((sequenceId: number) => {
+    if (confirm('Are you sure you want to delete this sequence? This action cannot be undone.')) {
+      deleteSequenceMutation.mutate(sequenceId);
+    }
+  }, [deleteSequenceMutation]);
 
   if (authLoading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
@@ -420,7 +494,7 @@ export default function EmailSequences() {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={() => setIsBuilderOpen(true)}
+            onClick={openNewSequenceBuilder}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -430,12 +504,23 @@ export default function EmailSequences() {
       </div>
 
       {/* Sequence Builder Dialog */}
-      <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
+      <Dialog open={isBuilderOpen} onOpenChange={(open) => {
+        setIsBuilderOpen(open);
+        if (!open) {
+          setSelectedSequence(null);
+          setIsEditing(false);
+          setNodes(initialNodes);
+          setEdges([]);
+          setSelectedNode(null);
+        }
+      }}>
         <DialogContent className="max-w-[95vw] h-[95vh] p-0">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Email Sequence Builder</DialogTitle>
+            <DialogTitle>
+              {isEditing ? `Edit: ${selectedSequence?.name}` : 'Email Sequence Builder'}
+            </DialogTitle>
             <DialogDescription>
-              Drag components from the sidebar to the canvas and connect them to build your automated email sequence
+              {isEditing ? 'Modify your existing email sequence' : 'Drag components from the sidebar to the canvas and connect them to build your automated email sequence'}
             </DialogDescription>
           </DialogHeader>
           
@@ -637,9 +722,10 @@ export default function EmailSequences() {
                 <Button 
                   onClick={saveSequence}
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={createSequenceMutation.isPending}
+                  disabled={createSequenceMutation.isPending || updateSequenceMutation.isPending}
                 >
-                  {createSequenceMutation.isPending ? "Saving..." : "Save Sequence"}
+                  {(createSequenceMutation.isPending || updateSequenceMutation.isPending) ? "Saving..." : 
+                   isEditing ? "Update Sequence" : "Save Sequence"}
                 </Button>
                 
                 <Button 
@@ -703,7 +789,7 @@ export default function EmailSequences() {
                 <p className="text-muted-foreground mb-4">
                   Create your first automated email sequence to engage your audience
                 </p>
-                <Button onClick={() => setIsBuilderOpen(true)}>
+                <Button onClick={openNewSequenceBuilder}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Sequence
                 </Button>
@@ -749,12 +835,17 @@ export default function EmailSequences() {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => {
-                              setSelectedSequence(sequence);
-                              setIsBuilderOpen(true);
-                            }}
+                            onClick={() => openEditSequenceBuilder(sequence)}
                           >
                             <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteSequence(sequence.id)}
+                            disabled={deleteSequenceMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
