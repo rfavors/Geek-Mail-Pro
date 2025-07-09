@@ -495,6 +495,424 @@ export default function EmailSequences() {
     }
   }, [deleteSequenceMutation]);
 
+  // Define template data
+  const templateData = {
+    'welcome-series': {
+      name: 'Welcome Series',
+      description: 'A 3-email onboarding sequence to welcome new subscribers',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'Welcome to our community! 👋', delay: '0' },
+          position: { x: 350, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '2', unit: 'days' },
+          position: { x: 350, y: 350 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Here\'s what you need to know', delay: '0' },
+          position: { x: 350, y: 500 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '3', unit: 'days' },
+          position: { x: 350, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'Ready to get started?', delay: '0' },
+          position: { x: 350, y: 800 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'email-2' },
+        { id: 'e4', source: 'email-2', target: 'delay-2' },
+        { id: 'e5', source: 'delay-2', target: 'email-3' },
+      ],
+    },
+    'product-launch': {
+      name: 'Product Launch Campaign',
+      description: 'A 5-email sequence to build anticipation and drive sales',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'Something big is coming...', delay: '0' },
+          position: { x: 200, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '3', unit: 'days' },
+          position: { x: 200, y: 350 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Sneak peek: Here\'s what\'s coming', delay: '0' },
+          position: { x: 200, y: 500 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '4', unit: 'days' },
+          position: { x: 200, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'It\'s here! Introducing [Product Name]', delay: '0' },
+          position: { x: 200, y: 800 },
+        },
+        {
+          id: 'delay-3',
+          type: 'delay',
+          data: { label: 'Wait 3', duration: '2', unit: 'days' },
+          position: { x: 200, y: 950 },
+        },
+        {
+          id: 'email-4',
+          type: 'email',
+          data: { label: 'Email 4', subject: 'Don\'t miss out - limited time offer', delay: '0' },
+          position: { x: 200, y: 1100 },
+        },
+        {
+          id: 'delay-4',
+          type: 'delay',
+          data: { label: 'Wait 4', duration: '3', unit: 'days' },
+          position: { x: 200, y: 1250 },
+        },
+        {
+          id: 'email-5',
+          type: 'email',
+          data: { label: 'Email 5', subject: 'Final hours - last chance!', delay: '0' },
+          position: { x: 200, y: 1400 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'email-2' },
+        { id: 'e4', source: 'email-2', target: 'delay-2' },
+        { id: 'e5', source: 'delay-2', target: 'email-3' },
+        { id: 'e6', source: 'email-3', target: 'delay-3' },
+        { id: 'e7', source: 'delay-3', target: 'email-4' },
+        { id: 'e8', source: 'email-4', target: 'delay-4' },
+        { id: 'e9', source: 'delay-4', target: 'email-5' },
+      ],
+    },
+    're-engagement': {
+      name: 'Re-engagement Flow',
+      description: 'A 4-email sequence to win back inactive subscribers',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'We miss you! Here\'s what\'s new', delay: '0' },
+          position: { x: 300, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '7', unit: 'days' },
+          position: { x: 300, y: 350 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Exclusive offer just for you', delay: '0' },
+          position: { x: 300, y: 500 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '7', unit: 'days' },
+          position: { x: 300, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'Last chance - are you still interested?', delay: '0' },
+          position: { x: 300, y: 800 },
+        },
+        {
+          id: 'delay-3',
+          type: 'delay',
+          data: { label: 'Wait 3', duration: '7', unit: 'days' },
+          position: { x: 300, y: 950 },
+        },
+        {
+          id: 'email-4',
+          type: 'email',
+          data: { label: 'Email 4', subject: 'Goodbye (but we hope it\'s not forever)', delay: '0' },
+          position: { x: 300, y: 1100 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'email-2' },
+        { id: 'e4', source: 'email-2', target: 'delay-2' },
+        { id: 'e5', source: 'delay-2', target: 'email-3' },
+        { id: 'e6', source: 'email-3', target: 'delay-3' },
+        { id: 'e7', source: 'delay-3', target: 'email-4' },
+      ],
+    },
+    'abandoned-cart': {
+      name: 'Abandoned Cart Recovery',
+      description: 'A 3-email sequence to recover abandoned purchases',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'You forgot something in your cart', delay: '0' },
+          position: { x: 350, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '1', unit: 'days' },
+          position: { x: 350, y: 350 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Still thinking it over? Here\'s 10% off', delay: '0' },
+          position: { x: 350, y: 500 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '5', unit: 'days' },
+          position: { x: 350, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'Last chance - your cart expires soon!', delay: '0' },
+          position: { x: 350, y: 800 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'email-2' },
+        { id: 'e4', source: 'email-2', target: 'delay-2' },
+        { id: 'e5', source: 'delay-2', target: 'email-3' },
+      ],
+    },
+    'educational-drip': {
+      name: 'Educational Drip Campaign',
+      description: 'A 6-email series to educate and nurture leads',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'Getting started: The basics', delay: '0' },
+          position: { x: 200, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '5', unit: 'days' },
+          position: { x: 200, y: 350 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Advanced tips and tricks', delay: '0' },
+          position: { x: 200, y: 500 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '5', unit: 'days' },
+          position: { x: 200, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'Common mistakes to avoid', delay: '0' },
+          position: { x: 200, y: 800 },
+        },
+        {
+          id: 'delay-3',
+          type: 'delay',
+          data: { label: 'Wait 3', duration: '5', unit: 'days' },
+          position: { x: 200, y: 950 },
+        },
+        {
+          id: 'email-4',
+          type: 'email',
+          data: { label: 'Email 4', subject: 'Case study: Real success story', delay: '0' },
+          position: { x: 200, y: 1100 },
+        },
+        {
+          id: 'delay-4',
+          type: 'delay',
+          data: { label: 'Wait 4', duration: '5', unit: 'days' },
+          position: { x: 200, y: 1250 },
+        },
+        {
+          id: 'email-5',
+          type: 'email',
+          data: { label: 'Email 5', subject: 'Tools and resources', delay: '0' },
+          position: { x: 200, y: 1400 },
+        },
+        {
+          id: 'delay-5',
+          type: 'delay',
+          data: { label: 'Wait 5', duration: '5', unit: 'days' },
+          position: { x: 200, y: 1550 },
+        },
+        {
+          id: 'email-6',
+          type: 'email',
+          data: { label: 'Email 6', subject: 'What\'s next for you?', delay: '0' },
+          position: { x: 200, y: 1700 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'email-2' },
+        { id: 'e4', source: 'email-2', target: 'delay-2' },
+        { id: 'e5', source: 'delay-2', target: 'email-3' },
+        { id: 'e6', source: 'email-3', target: 'delay-3' },
+        { id: 'e7', source: 'delay-3', target: 'email-4' },
+        { id: 'e8', source: 'email-4', target: 'delay-4' },
+        { id: 'e9', source: 'delay-4', target: 'email-5' },
+        { id: 'e10', source: 'email-5', target: 'delay-5' },
+        { id: 'e11', source: 'delay-5', target: 'email-6' },
+      ],
+    },
+    'feedback-loop': {
+      name: 'Customer Feedback Loop',
+      description: 'A 4-email sequence to collect customer feedback',
+      nodes: [
+        {
+          id: 'start',
+          type: 'input',
+          data: { label: 'Sequence Start' },
+          position: { x: 400, y: 50 },
+          style: { background: '#dcfce7', border: '2px solid #16a34a', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#166534' },
+        },
+        {
+          id: 'email-1',
+          type: 'email',
+          data: { label: 'Email 1', subject: 'How was your experience?', delay: '0' },
+          position: { x: 300, y: 200 },
+        },
+        {
+          id: 'delay-1',
+          type: 'delay',
+          data: { label: 'Wait 1', duration: '3', unit: 'days' },
+          position: { x: 300, y: 350 },
+        },
+        {
+          id: 'condition-1',
+          type: 'condition',
+          data: { label: 'Condition 1', condition: 'Email opened' },
+          position: { x: 300, y: 500 },
+        },
+        {
+          id: 'email-2',
+          type: 'email',
+          data: { label: 'Email 2', subject: 'Quick survey - 2 minutes', delay: '0' },
+          position: { x: 150, y: 650 },
+        },
+        {
+          id: 'email-3',
+          type: 'email',
+          data: { label: 'Email 3', subject: 'Thank you for your feedback!', delay: '0' },
+          position: { x: 450, y: 650 },
+        },
+        {
+          id: 'delay-2',
+          type: 'delay',
+          data: { label: 'Wait 2', duration: '7', unit: 'days' },
+          position: { x: 300, y: 800 },
+        },
+        {
+          id: 'email-4',
+          type: 'email',
+          data: { label: 'Email 4', subject: 'Here\'s how we\'ve improved', delay: '0' },
+          position: { x: 300, y: 950 },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'start', target: 'email-1' },
+        { id: 'e2', source: 'email-1', target: 'delay-1' },
+        { id: 'e3', source: 'delay-1', target: 'condition-1' },
+        { id: 'e4', source: 'condition-1', target: 'email-2' },
+        { id: 'e5', source: 'condition-1', target: 'email-3', sourceHandle: 'else' },
+        { id: 'e6', source: 'email-2', target: 'delay-2' },
+        { id: 'e7', source: 'email-3', target: 'delay-2' },
+        { id: 'e8', source: 'delay-2', target: 'email-4' },
+      ],
+    },
+  };
+
+  // Use template function
+  const useTemplate = useCallback((templateId: string) => {
+    const template = templateData[templateId];
+    if (!template) return;
+
+    setSequenceName(template.name);
+    setSequenceDescription(template.description);
+    setNodes(template.nodes);
+    setEdges(template.edges);
+    setSelectedSequence(null);
+    setIsEditing(false);
+    setSelectedNode(null);
+    setIsBuilderOpen(true);
+  }, [setNodes, setEdges]);
+
   if (authLoading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -964,26 +1382,143 @@ export default function EmailSequences() {
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: "Welcome Series", desc: "3-email welcome sequence for new subscribers", icon: "👋" },
-              { name: "Product Launch", desc: "5-email sequence for product announcements", icon: "🚀" },
-              { name: "Abandoned Cart", desc: "Recovery sequence for incomplete purchases", icon: "🛒" },
-              { name: "Customer Onboarding", desc: "Educational sequence for new customers", icon: "📚" },
-              { name: "Re-engagement", desc: "Win back inactive subscribers", icon: "💝" },
-              { name: "Newsletter Series", desc: "Weekly newsletter automation", icon: "📰" },
-            ].map((template, index) => (
-              <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="text-4xl mb-4">{template.icon}</div>
-                  <h3 className="text-lg font-semibold mb-2">{template.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{template.desc}</p>
-                  <Button variant="outline" className="w-full">
-                    Use Template
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-2">Sequence Templates</h3>
+            <p className="text-muted-foreground">Start with proven email sequence templates and customize them for your business</p>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Welcome Series Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('welcome-series')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Welcome Series</h4>
+                    <p className="text-sm text-muted-foreground">3-email onboarding sequence</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Introduce new subscribers to your brand with a warm welcome, share your story, and guide them through your key offerings.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">3 emails</Badge>
+                  <Badge variant="outline">5 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Launch Campaign Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('product-launch')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Product Launch Campaign</h4>
+                    <p className="text-sm text-muted-foreground">5-email launch sequence</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Build anticipation, announce your launch, and drive sales with a strategic product launch email sequence.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">5 emails</Badge>
+                  <Badge variant="outline">14 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Re-engagement Flow Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('re-engagement')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Target className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Re-engagement Flow</h4>
+                    <p className="text-sm text-muted-foreground">4-email win-back sequence</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Win back inactive subscribers with targeted content, special offers, and final goodbye messages.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">4 emails</Badge>
+                  <Badge variant="outline">21 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Abandoned Cart Recovery Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('abandoned-cart')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Archive className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Abandoned Cart Recovery</h4>
+                    <p className="text-sm text-muted-foreground">3-email recovery sequence</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Recover lost sales with gentle reminders, social proof, and limited-time incentives.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">3 emails</Badge>
+                  <Badge variant="outline">7 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Educational Drip Campaign Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('educational-drip')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Educational Drip Campaign</h4>
+                    <p className="text-sm text-muted-foreground">6-email educational series</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Nurture leads with valuable educational content, tips, and industry insights over time.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">6 emails</Badge>
+                  <Badge variant="outline">30 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Customer Feedback Loop Template */}
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => useTemplate('feedback-loop')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <Filter className="h-6 w-6 text-teal-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Customer Feedback Loop</h4>
+                    <p className="text-sm text-muted-foreground">4-email feedback sequence</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Collect valuable customer feedback, testimonials, and reviews to improve your business.
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">4 emails</Badge>
+                  <Badge variant="outline">14 days</Badge>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
