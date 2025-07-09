@@ -14,6 +14,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
 import Contacts from "@/pages/contacts";
+import ContactSegments from "@/pages/contact-segments";
 import DomainSettings from "@/pages/domain-settings";
 import Billing from "@/pages/billing";
 
@@ -60,6 +61,7 @@ function Router() {
             <Route path="/" component={Dashboard} />
             <Route path="/campaigns" component={Campaigns} />
             <Route path="/contacts" component={Contacts} />
+            <Route path="/contact-segments" component={ContactSegments} />
             <Route path="/domain-settings" component={DomainSettings} />
             <Route path="/lead-generation" component={LeadGeneration} />
             <Route path="/email-sequences" component={EmailSequences} />

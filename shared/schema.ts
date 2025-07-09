@@ -127,11 +127,22 @@ export const contacts = pgTable("contacts", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   company: varchar("company"),
+  jobTitle: varchar("job_title"),
+  phone: varchar("phone"),
+  location: varchar("location"),
+  website: varchar("website"),
+  customFields: jsonb("custom_fields"), // Flexible custom data storage
   tags: text("tags").array(),
   isActive: boolean("is_active").default(true),
   subscriptionDate: timestamp("subscription_date").defaultNow(),
   unsubscribedAt: timestamp("unsubscribed_at"),
+  lastActivityAt: timestamp("last_activity_at"), // For engagement tracking
+  totalEmailsReceived: integer("total_emails_received").default(0),
+  totalEmailsOpened: integer("total_emails_opened").default(0),
+  totalEmailsClicked: integer("total_emails_clicked").default(0),
+  engagementScore: integer("engagement_score").default(0), // 0-100 engagement score
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Contact list memberships
@@ -140,6 +151,28 @@ export const contactListMemberships = pgTable("contact_list_memberships", {
   contactId: integer("contact_id").notNull().references(() => contacts.id),
   listId: integer("list_id").notNull().references(() => contactLists.id),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Contact segments for advanced targeting
+export const contactSegments = pgTable("contact_segments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  conditions: jsonb("conditions").notNull(), // Complex filtering conditions
+  contactCount: integer("contact_count").default(0),
+  isActive: boolean("is_active").default(true),
+  isAutoUpdate: boolean("is_auto_update").default(true), // Automatically update segment membership
+  lastUpdatedAt: timestamp("last_updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Contact segment memberships (many-to-many)
+export const contactSegmentMemberships = pgTable("contact_segment_memberships", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  segmentId: integer("segment_id").notNull().references(() => contactSegments.id, { onDelete: "cascade" }),
+  addedAt: timestamp("added_at").defaultNow(),
 });
 
 // Email campaigns
@@ -292,6 +325,7 @@ export const userRelations = relations(users, ({ many }) => ({
   domains: many(domains),
   contactLists: many(contactLists),
   contacts: many(contacts),
+  contactSegments: many(contactSegments),
   campaigns: many(campaigns),
   leadSources: many(leadSources),
   leads: many(leads),
@@ -333,7 +367,18 @@ export const contactListRelations = relations(contactLists, ({ one, many }) => (
 export const contactRelations = relations(contacts, ({ one, many }) => ({
   user: one(users, { fields: [contacts.userId], references: [users.id] }),
   memberships: many(contactListMemberships),
+  segmentMemberships: many(contactSegmentMemberships),
   campaignRecipients: many(campaignRecipients),
+}));
+
+export const contactSegmentRelations = relations(contactSegments, ({ one, many }) => ({
+  user: one(users, { fields: [contactSegments.userId], references: [users.id] }),
+  memberships: many(contactSegmentMemberships),
+}));
+
+export const contactSegmentMembershipRelations = relations(contactSegmentMemberships, ({ one }) => ({
+  contact: one(contacts, { fields: [contactSegmentMemberships.contactId], references: [contacts.id] }),
+  segment: one(contactSegments, { fields: [contactSegmentMemberships.segmentId], references: [contactSegments.id] }),
 }));
 
 export const campaignRelations = relations(campaigns, ({ one, many }) => ({
@@ -420,6 +465,14 @@ export const insertContactListSchema = createInsertSchema(contactLists).omit({
 export const insertContactSchema = createInsertSchema(contacts).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContactSegmentSchema = createInsertSchema(contactSegments).omit({
+  id: true,
+  contactCount: true,
+  lastUpdatedAt: true,
+  createdAt: true,
 });
 
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({
@@ -503,6 +556,9 @@ export type InsertContactList = z.infer<typeof insertContactListSchema>;
 export type ContactList = typeof contactLists.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
+export type InsertContactSegment = z.infer<typeof insertContactSegmentSchema>;
+export type ContactSegment = typeof contactSegments.$inferSelect;
+export type ContactSegmentMembership = typeof contactSegmentMemberships.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type CampaignRecipient = typeof campaignRecipients.$inferSelect;

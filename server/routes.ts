@@ -13,6 +13,7 @@ import {
   insertForwardingLogSchema,
   insertContactListSchema, 
   insertContactSchema,
+  insertContactSegmentSchema,
   insertCampaignSchema,
   insertLeadSourceSchema,
   insertLeadSchema,
@@ -463,6 +464,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing CSV:", error);
       res.status(500).json({ message: "Failed to import CSV" });
+    }
+  });
+
+  // Contact segment routes
+  app.post('/api/contact-segments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const segmentData = insertContactSegmentSchema.parse({ ...req.body, userId });
+      
+      const segment = await storage.createContactSegment(segmentData);
+      res.json(segment);
+    } catch (error) {
+      console.error("Error creating contact segment:", error);
+      res.status(500).json({ message: "Failed to create contact segment" });
+    }
+  });
+
+  app.get('/api/contact-segments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const segments = await storage.getContactSegmentsByUserId(userId);
+      res.json(segments);
+    } catch (error) {
+      console.error("Error fetching contact segments:", error);
+      res.status(500).json({ message: "Failed to fetch contact segments" });
+    }
+  });
+
+  app.get('/api/contact-segments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const segment = await storage.getContactSegment(Number(id));
+      
+      if (!segment) {
+        return res.status(404).json({ message: "Contact segment not found" });
+      }
+      
+      res.json(segment);
+    } catch (error) {
+      console.error("Error fetching contact segment:", error);
+      res.status(500).json({ message: "Failed to fetch contact segment" });
+    }
+  });
+
+  app.patch('/api/contact-segments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const segment = await storage.updateContactSegment(Number(id), updates);
+      res.json(segment);
+    } catch (error) {
+      console.error("Error updating contact segment:", error);
+      res.status(500).json({ message: "Failed to update contact segment" });
+    }
+  });
+
+  app.delete('/api/contact-segments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteContactSegment(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting contact segment:", error);
+      res.status(500).json({ message: "Failed to delete contact segment" });
+    }
+  });
+
+  app.get('/api/contact-segments/:id/contacts', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const contacts = await storage.getContactsBySegmentId(Number(id));
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching segment contacts:", error);
+      res.status(500).json({ message: "Failed to fetch segment contacts" });
+    }
+  });
+
+  app.post('/api/contact-segments/:id/refresh', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.refreshSegmentMembership(Number(id));
+      
+      // Return updated segment with new contact count
+      const segment = await storage.getContactSegment(Number(id));
+      res.json(segment);
+    } catch (error) {
+      console.error("Error refreshing segment membership:", error);
+      res.status(500).json({ message: "Failed to refresh segment membership" });
     }
   });
 

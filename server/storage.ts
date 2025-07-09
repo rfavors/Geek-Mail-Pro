@@ -8,6 +8,8 @@ import {
   contactLists,
   contacts,
   contactListMemberships,
+  contactSegments,
+  contactSegmentMemberships,
   campaigns,
   campaignRecipients,
   leadSources,
@@ -33,6 +35,9 @@ import {
   type ContactList,
   type InsertContact,
   type Contact,
+  type InsertContactSegment,
+  type ContactSegment,
+  type ContactSegmentMembership,
   type InsertCampaign,
   type Campaign,
   type CampaignRecipient,
@@ -108,6 +113,17 @@ export interface IStorage {
   deleteContact(id: number): Promise<void>;
   addContactToList(contactId: number, listId: number): Promise<void>;
   removeContactFromList(contactId: number, listId: number): Promise<void>;
+  
+  // Contact segment operations
+  createContactSegment(segment: InsertContactSegment): Promise<ContactSegment>;
+  getContactSegmentsByUserId(userId: string): Promise<ContactSegment[]>;
+  getContactSegment(id: number): Promise<ContactSegment | undefined>;
+  updateContactSegment(id: number, updates: Partial<ContactSegment>): Promise<ContactSegment>;
+  deleteContactSegment(id: number): Promise<void>;
+  getContactsBySegmentId(segmentId: number): Promise<Contact[]>;
+  refreshSegmentMembership(segmentId: number): Promise<void>;
+  addContactToSegment(contactId: number, segmentId: number): Promise<void>;
+  removeContactFromSegment(contactId: number, segmentId: number): Promise<void>;
   
   // Campaign operations
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
@@ -451,6 +467,273 @@ export class DatabaseStorage implements IStorage {
           eq(contactListMemberships.listId, listId)
         )
       );
+  }
+
+  // Contact segment operations
+  async createContactSegment(segment: InsertContactSegment): Promise<ContactSegment> {
+    const [newSegment] = await db.insert(contactSegments).values(segment).returning();
+    // Trigger initial membership calculation if auto-update is enabled
+    if (newSegment.isAutoUpdate) {
+      await this.refreshSegmentMembership(newSegment.id);
+    }
+    return newSegment;
+  }
+
+  async getContactSegmentsByUserId(userId: string): Promise<ContactSegment[]> {
+    return await db.select().from(contactSegments).where(eq(contactSegments.userId, userId)).orderBy(desc(contactSegments.createdAt));
+  }
+
+  async getContactSegment(id: number): Promise<ContactSegment | undefined> {
+    const [segment] = await db.select().from(contactSegments).where(eq(contactSegments.id, id));
+    return segment;
+  }
+
+  async updateContactSegment(id: number, updates: Partial<ContactSegment>): Promise<ContactSegment> {
+    const [segment] = await db
+      .update(contactSegments)
+      .set({ ...updates, lastUpdatedAt: new Date() })
+      .where(eq(contactSegments.id, id))
+      .returning();
+    
+    // Refresh membership if conditions or auto-update changed
+    if (updates.conditions || updates.isAutoUpdate) {
+      await this.refreshSegmentMembership(segment.id);
+    }
+    
+    return segment;
+  }
+
+  async deleteContactSegment(id: number): Promise<void> {
+    await db.delete(contactSegments).where(eq(contactSegments.id, id));
+  }
+
+  async getContactsBySegmentId(segmentId: number): Promise<Contact[]> {
+    return await db
+      .select({ 
+        id: contacts.id,
+        userId: contacts.userId,
+        email: contacts.email,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        company: contacts.company,
+        jobTitle: contacts.jobTitle,
+        phone: contacts.phone,
+        location: contacts.location,
+        website: contacts.website,
+        customFields: contacts.customFields,
+        tags: contacts.tags,
+        isActive: contacts.isActive,
+        subscriptionDate: contacts.subscriptionDate,
+        unsubscribedAt: contacts.unsubscribedAt,
+        lastActivityAt: contacts.lastActivityAt,
+        totalEmailsReceived: contacts.totalEmailsReceived,
+        totalEmailsOpened: contacts.totalEmailsOpened,
+        totalEmailsClicked: contacts.totalEmailsClicked,
+        engagementScore: contacts.engagementScore,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      })
+      .from(contacts)
+      .innerJoin(contactSegmentMemberships, eq(contacts.id, contactSegmentMemberships.contactId))
+      .where(eq(contactSegmentMemberships.segmentId, segmentId));
+  }
+
+  async refreshSegmentMembership(segmentId: number): Promise<void> {
+    const segment = await this.getContactSegment(segmentId);
+    if (!segment || !segment.conditions) return;
+
+    // Clear existing memberships
+    await db.delete(contactSegmentMemberships).where(eq(contactSegmentMemberships.segmentId, segmentId));
+
+    // Get all contacts for the user
+    const allContacts = await this.getContactsByUserId(segment.userId);
+    
+    // Filter contacts based on segment conditions
+    const matchingContacts = this.filterContactsByConditions(allContacts, segment.conditions as any);
+    
+    // Add matching contacts to segment
+    if (matchingContacts.length > 0) {
+      const memberships = matchingContacts.map(contact => ({
+        contactId: contact.id,
+        segmentId: segmentId,
+      }));
+      
+      await db.insert(contactSegmentMemberships).values(memberships);
+    }
+
+    // Update contact count
+    await db
+      .update(contactSegments)
+      .set({ 
+        contactCount: matchingContacts.length,
+        lastUpdatedAt: new Date()
+      })
+      .where(eq(contactSegments.id, segmentId));
+  }
+
+  async addContactToSegment(contactId: number, segmentId: number): Promise<void> {
+    await db.insert(contactSegmentMemberships).values({ contactId, segmentId });
+    
+    // Update contact count
+    const [count] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(contactSegmentMemberships)
+      .where(eq(contactSegmentMemberships.segmentId, segmentId));
+    
+    await db
+      .update(contactSegments)
+      .set({ contactCount: count.count })
+      .where(eq(contactSegments.id, segmentId));
+  }
+
+  async removeContactFromSegment(contactId: number, segmentId: number): Promise<void> {
+    await db
+      .delete(contactSegmentMemberships)
+      .where(
+        and(
+          eq(contactSegmentMemberships.contactId, contactId),
+          eq(contactSegmentMemberships.segmentId, segmentId)
+        )
+      );
+    
+    // Update contact count
+    const [count] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(contactSegmentMemberships)
+      .where(eq(contactSegmentMemberships.segmentId, segmentId));
+    
+    await db
+      .update(contactSegments)
+      .set({ contactCount: count.count })
+      .where(eq(contactSegments.id, segmentId));
+  }
+
+  // Helper method to filter contacts by segment conditions
+  private filterContactsByConditions(contacts: Contact[], conditions: any): Contact[] {
+    return contacts.filter(contact => {
+      try {
+        return this.evaluateConditions(contact, conditions);
+      } catch (error) {
+        console.error('Error evaluating segment conditions:', error);
+        return false;
+      }
+    });
+  }
+
+  private evaluateConditions(contact: Contact, conditions: any): boolean {
+    if (!conditions) return true;
+
+    const { operator = 'AND', rules = [] } = conditions;
+
+    if (rules.length === 0) return true;
+
+    const results = rules.map((rule: any) => {
+      if (rule.rules) {
+        // Nested condition group
+        return this.evaluateConditions(contact, rule);
+      }
+      
+      // Individual rule
+      return this.evaluateRule(contact, rule);
+    });
+
+    if (operator === 'AND') {
+      return results.every(Boolean);
+    } else {
+      return results.some(Boolean);
+    }
+  }
+
+  private evaluateRule(contact: Contact, rule: any): boolean {
+    const { field, operator, value } = rule;
+    
+    let contactValue: any;
+    
+    // Get contact field value
+    switch (field) {
+      case 'email':
+        contactValue = contact.email;
+        break;
+      case 'firstName':
+        contactValue = contact.firstName;
+        break;
+      case 'lastName':
+        contactValue = contact.lastName;
+        break;
+      case 'company':
+        contactValue = contact.company;
+        break;
+      case 'jobTitle':
+        contactValue = contact.jobTitle;
+        break;
+      case 'location':
+        contactValue = contact.location;
+        break;
+      case 'engagementScore':
+        contactValue = contact.engagementScore || 0;
+        break;
+      case 'totalEmailsOpened':
+        contactValue = contact.totalEmailsOpened || 0;
+        break;
+      case 'totalEmailsClicked':
+        contactValue = contact.totalEmailsClicked || 0;
+        break;
+      case 'createdAt':
+        contactValue = contact.createdAt;
+        break;
+      case 'lastActivityAt':
+        contactValue = contact.lastActivityAt;
+        break;
+      case 'tags':
+        contactValue = contact.tags || [];
+        break;
+      default:
+        // Check custom fields
+        if (contact.customFields && typeof contact.customFields === 'object') {
+          contactValue = (contact.customFields as any)[field];
+        }
+        break;
+    }
+
+    // Apply operator
+    switch (operator) {
+      case 'equals':
+        return contactValue === value;
+      case 'not_equals':
+        return contactValue !== value;
+      case 'contains':
+        return String(contactValue || '').toLowerCase().includes(String(value || '').toLowerCase());
+      case 'not_contains':
+        return !String(contactValue || '').toLowerCase().includes(String(value || '').toLowerCase());
+      case 'starts_with':
+        return String(contactValue || '').toLowerCase().startsWith(String(value || '').toLowerCase());
+      case 'ends_with':
+        return String(contactValue || '').toLowerCase().endsWith(String(value || '').toLowerCase());
+      case 'greater_than':
+        return Number(contactValue || 0) > Number(value || 0);
+      case 'less_than':
+        return Number(contactValue || 0) < Number(value || 0);
+      case 'greater_equal':
+        return Number(contactValue || 0) >= Number(value || 0);
+      case 'less_equal':
+        return Number(contactValue || 0) <= Number(value || 0);
+      case 'is_empty':
+        return !contactValue || contactValue === '' || (Array.isArray(contactValue) && contactValue.length === 0);
+      case 'is_not_empty':
+        return !!contactValue && contactValue !== '' && (!Array.isArray(contactValue) || contactValue.length > 0);
+      case 'in_list':
+        return Array.isArray(value) && value.includes(contactValue);
+      case 'not_in_list':
+        return !Array.isArray(value) || !value.includes(contactValue);
+      case 'date_before':
+        return new Date(contactValue || 0) < new Date(value || 0);
+      case 'date_after':
+        return new Date(contactValue || 0) > new Date(value || 0);
+      case 'tag_contains':
+        return Array.isArray(contactValue) && contactValue.some(tag => String(tag).toLowerCase().includes(String(value || '').toLowerCase()));
+      default:
+        return false;
+    }
   }
 
   // Campaign operations
