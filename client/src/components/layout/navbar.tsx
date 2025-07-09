@@ -35,7 +35,7 @@ export function Navbar() {
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
             <Bot className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold">Mail-Geek</span>
+          <span className="text-lg font-bold">Geek Mail Pro</span>
         </Link>
 
         <div className="ml-auto flex items-center space-x-4">

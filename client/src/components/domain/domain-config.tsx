@@ -122,13 +122,13 @@ export function DomainConfig({ onComplete }: DomainConfigProps) {
     {
       type: "TXT", 
       name: "@",
-      value: "v=spf1 include:mailgeek.io ~all",
+      value: "v=spf1 include:geek-mail-pro.com ~all",
       description: "SPF record for authorized email sending"
     },
     {
       type: "CNAME",
-      name: "mailgeek._domainkey",
-      value: "mailgeek._domainkey.mailgeek.io",
+      name: "geek-mail-pro._domainkey",
+      value: "geek-mail-pro._domainkey.geek-mail-pro.com",
       description: "DKIM signing key for email authentication"
     }
   ];
