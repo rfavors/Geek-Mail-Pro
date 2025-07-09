@@ -51,18 +51,18 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 // Custom node types for the drag-and-drop builder
-const EmailNode = ({ data, isConnectable }) => {
+const EmailNode = ({ data, isConnectable, selected }) => {
   return (
-    <div className="bg-white border-2 border-blue-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+    <div className={`bg-white border-2 ${selected ? 'border-blue-700 shadow-xl' : 'border-blue-500'} rounded-lg p-3 shadow-lg min-w-[200px] relative cursor-pointer hover:shadow-xl transition-all`}>
       <Handle
         type="target"
         position={Position.Top}
         style={{ background: '#555' }}
         isConnectable={isConnectable}
       />
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 bg-blue-100 rounded-full">
-          <Mail className="h-4 w-4 text-blue-600" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="p-1.5 bg-blue-100 rounded-full">
+          <Mail className="h-3.5 w-3.5 text-blue-600" />
         </div>
         <div>
           <div className="font-semibold text-sm text-gray-800">{data.label}</div>
@@ -77,6 +77,11 @@ const EmailNode = ({ data, isConnectable }) => {
           <span className="font-medium">Delay:</span> {data.delay || '0'} days
         </div>
       </div>
+      {selected && (
+        <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+          Click to edit
+        </div>
+      )}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -87,18 +92,18 @@ const EmailNode = ({ data, isConnectable }) => {
   );
 };
 
-const DelayNode = ({ data, isConnectable }) => {
+const DelayNode = ({ data, isConnectable, selected }) => {
   return (
-    <div className="bg-white border-2 border-yellow-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+    <div className={`bg-white border-2 ${selected ? 'border-yellow-700 shadow-xl' : 'border-yellow-500'} rounded-lg p-3 shadow-lg min-w-[180px] relative cursor-pointer hover:shadow-xl transition-all`}>
       <Handle
         type="target"
         position={Position.Top}
         style={{ background: '#555' }}
         isConnectable={isConnectable}
       />
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 bg-yellow-100 rounded-full">
-          <Clock className="h-4 w-4 text-yellow-600" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="p-1.5 bg-yellow-100 rounded-full">
+          <Clock className="h-3.5 w-3.5 text-yellow-600" />
         </div>
         <div>
           <div className="font-semibold text-sm text-gray-800">{data.label}</div>
@@ -108,6 +113,11 @@ const DelayNode = ({ data, isConnectable }) => {
       <div className="text-xs text-gray-600">
         <span className="font-medium">Wait:</span> {data.duration || '1'} {data.unit || 'days'}
       </div>
+      {selected && (
+        <div className="absolute -top-2 -right-2 bg-yellow-600 text-white text-xs px-2 py-1 rounded">
+          Click to edit
+        </div>
+      )}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -118,27 +128,32 @@ const DelayNode = ({ data, isConnectable }) => {
   );
 };
 
-const ConditionNode = ({ data, isConnectable }) => {
+const ConditionNode = ({ data, isConnectable, selected }) => {
   return (
-    <div className="bg-white border-2 border-purple-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+    <div className={`bg-white border-2 ${selected ? 'border-purple-700 shadow-xl' : 'border-purple-500'} rounded-lg p-3 shadow-lg min-w-[160px] relative cursor-pointer hover:shadow-xl transition-all`}>
       <Handle
         type="target"
         position={Position.Top}
         style={{ background: '#555' }}
         isConnectable={isConnectable}
       />
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 bg-purple-100 rounded-full">
-          <GitBranch className="h-4 w-4 text-purple-600" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="p-1 bg-purple-100 rounded-full">
+          <GitBranch className="h-3 w-3 text-purple-600" />
         </div>
         <div>
-          <div className="font-semibold text-sm text-gray-800">{data.label}</div>
-          <div className="text-xs text-gray-500">Condition Step</div>
+          <div className="font-semibold text-xs text-gray-800">{data.label}</div>
+          <div className="text-xs text-gray-500">Condition</div>
         </div>
       </div>
       <div className="text-xs text-gray-600">
         <span className="font-medium">If:</span> {data.condition || 'Email opened'}
       </div>
+      {selected && (
+        <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+          Click to edit
+        </div>
+      )}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -189,6 +204,8 @@ export default function EmailSequences() {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [isEditingNode, setIsEditingNode] = useState(false);
 
   // Fetch email sequences
   const { data: sequences = [], isLoading: sequencesLoading } = useQuery({
@@ -340,6 +357,135 @@ export default function EmailSequences() {
             <div className="w-72 bg-gray-50 p-4 rounded-lg border">
               <h3 className="font-semibold mb-4 text-gray-800">Drag Components</h3>
               
+              {/* Node Editor Panel */}
+              {selectedNode && (
+                <div className="mb-6 p-4 bg-white rounded-lg border-2 border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-sm">Edit {selectedNode.data.label}</h4>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setSelectedNode(null)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  
+                  {selectedNode.type === 'email' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Subject Line</Label>
+                        <Input 
+                          className="text-xs"
+                          value={selectedNode.data.subject || ''}
+                          onChange={(e) => {
+                            const updatedNode = {
+                              ...selectedNode,
+                              data: { ...selectedNode.data, subject: e.target.value }
+                            };
+                            setSelectedNode(updatedNode);
+                            setNodes(nds => nds.map(n => n.id === selectedNode.id ? updatedNode : n));
+                          }}
+                          placeholder="Enter email subject"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Delay (days)</Label>
+                        <Input 
+                          className="text-xs"
+                          type="number"
+                          value={selectedNode.data.delay || '0'}
+                          onChange={(e) => {
+                            const updatedNode = {
+                              ...selectedNode,
+                              data: { ...selectedNode.data, delay: e.target.value }
+                            };
+                            setSelectedNode(updatedNode);
+                            setNodes(nds => nds.map(n => n.id === selectedNode.id ? updatedNode : n));
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedNode.type === 'delay' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Duration</Label>
+                        <Input 
+                          className="text-xs"
+                          type="number"
+                          value={selectedNode.data.duration || '1'}
+                          onChange={(e) => {
+                            const updatedNode = {
+                              ...selectedNode,
+                              data: { ...selectedNode.data, duration: e.target.value }
+                            };
+                            setSelectedNode(updatedNode);
+                            setNodes(nds => nds.map(n => n.id === selectedNode.id ? updatedNode : n));
+                          }}
+                          placeholder="1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Unit</Label>
+                        <Select 
+                          value={selectedNode.data.unit || 'days'}
+                          onValueChange={(value) => {
+                            const updatedNode = {
+                              ...selectedNode,
+                              data: { ...selectedNode.data, unit: value }
+                            };
+                            setSelectedNode(updatedNode);
+                            setNodes(nds => nds.map(n => n.id === selectedNode.id ? updatedNode : n));
+                          }}
+                        >
+                          <SelectTrigger className="text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minutes">Minutes</SelectItem>
+                            <SelectItem value="hours">Hours</SelectItem>
+                            <SelectItem value="days">Days</SelectItem>
+                            <SelectItem value="weeks">Weeks</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedNode.type === 'condition' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Condition</Label>
+                        <Select 
+                          value={selectedNode.data.condition || 'Email opened'}
+                          onValueChange={(value) => {
+                            const updatedNode = {
+                              ...selectedNode,
+                              data: { ...selectedNode.data, condition: value }
+                            };
+                            setSelectedNode(updatedNode);
+                            setNodes(nds => nds.map(n => n.id === selectedNode.id ? updatedNode : n));
+                          }}
+                        >
+                          <SelectTrigger className="text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Email opened">Email opened</SelectItem>
+                            <SelectItem value="Email clicked">Email clicked</SelectItem>
+                            <SelectItem value="No response">No response</SelectItem>
+                            <SelectItem value="Purchased">Purchased</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* Draggable Components */}
               <div className="space-y-3">
                 <div 
@@ -455,8 +601,8 @@ export default function EmailSequences() {
                   }
 
                   const position = {
-                    x: event.clientX - reactFlowBounds.left - 110,
-                    y: event.clientY - reactFlowBounds.top - 50,
+                    x: event.clientX - reactFlowBounds.left - 80,
+                    y: event.clientY - reactFlowBounds.top - 30,
                   };
 
                   const nodeCount = nodes.filter(n => n.type === type).length;
@@ -480,6 +626,9 @@ export default function EmailSequences() {
                 onDragOver={(event) => {
                   event.preventDefault();
                   event.dataTransfer.dropEffect = 'move';
+                }}
+                onNodeClick={(event, node) => {
+                  setSelectedNode(node);
                 }}
               >
                 <Controls />
