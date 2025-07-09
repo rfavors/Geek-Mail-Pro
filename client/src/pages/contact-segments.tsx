@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
   Plus, 
@@ -16,7 +17,13 @@ import {
   RefreshCw,
   Target,
   Eye,
-  Edit
+  Edit,
+  TrendingUp,
+  Mail,
+  ShoppingCart,
+  Calendar,
+  Star,
+  MapPin
 } from "lucide-react";
 import {
   Dialog,
@@ -246,6 +253,143 @@ export default function ContactSegments() {
     refreshSegmentMutation.mutate(segmentId);
   };
 
+  // Segment templates data
+  const segmentTemplates = [
+    {
+      id: 'high-engagement',
+      name: 'High Engagement Subscribers',
+      description: 'Contacts with high email engagement rates',
+      icon: TrendingUp,
+      color: 'green',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'engagementScore',
+            operator: 'gte',
+            value: 75
+          },
+          {
+            field: 'totalEmailsOpened',
+            operator: 'gte',
+            value: 10
+          }
+        ]
+      }
+    },
+    {
+      id: 'recent-subscribers',
+      name: 'Recent Subscribers',
+      description: 'Contacts who joined in the last 30 days',
+      icon: Users,
+      color: 'blue',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'createdAt',
+            operator: 'gte',
+            value: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          }
+        ]
+      }
+    },
+    {
+      id: 'inactive-subscribers',
+      name: 'Inactive Subscribers',
+      description: 'Contacts who haven\'t engaged in 90+ days',
+      icon: Target,
+      color: 'orange',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'engagementScore',
+            operator: 'lte',
+            value: 25
+          },
+          {
+            field: 'totalEmailsOpened',
+            operator: 'lte',
+            value: 2
+          }
+        ]
+      }
+    },
+    {
+      id: 'vip-customers',
+      name: 'VIP Customers',
+      description: 'High-value contacts from enterprise companies',
+      icon: Star,
+      color: 'purple',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'engagementScore',
+            operator: 'gte',
+            value: 80
+          },
+          {
+            field: 'jobTitle',
+            operator: 'contains',
+            value: 'CEO,CTO,VP,Director,Manager'
+          }
+        ]
+      }
+    },
+    {
+      id: 'location-based',
+      name: 'North America Contacts',
+      description: 'Contacts located in North America',
+      icon: MapPin,
+      color: 'teal',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'location',
+            operator: 'contains',
+            value: 'United States,Canada,USA,US,CA'
+          }
+        ]
+      }
+    },
+    {
+      id: 'tech-professionals',
+      name: 'Tech Professionals',
+      description: 'Contacts working in technology roles',
+      icon: Settings,
+      color: 'indigo',
+      conditions: {
+        operator: 'AND',
+        rules: [
+          {
+            field: 'jobTitle',
+            operator: 'contains',
+            value: 'Developer,Engineer,Technical,Software,DevOps,Data,IT'
+          }
+        ]
+      }
+    }
+  ];
+
+  const [templateData, setTemplateData] = useState<any>(null);
+
+  const useTemplate = (template: any) => {
+    // Pre-populate the segment builder with template data
+    const data = {
+      name: template.name,
+      description: template.description,
+      conditions: template.conditions,
+      isActive: true,
+      isAutoUpdate: true
+    };
+    
+    setTemplateData(data);
+    setIsCreateOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -269,29 +413,41 @@ export default function ContactSegments() {
               </DialogDescription>
             </DialogHeader>
             <SegmentBuilder
+              initialData={templateData}
               onSave={handleCreateSegment}
-              onCancel={() => setIsCreateOpen(false)}
+              onCancel={() => {
+                setIsCreateOpen(false);
+                setTemplateData(null);
+              }}
               isLoading={createSegmentMutation.isPending}
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search segments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      {/* Tabs Layout */}
+      <Tabs defaultValue="segments" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="segments">My Segments ({segments?.length || 0})</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
 
-      {/* Segments Grid */}
-      {segmentsLoading ? (
+        <TabsContent value="segments" className="space-y-6">
+          {/* Search and Filters */}
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search segments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Segments Grid */}
+          {segmentsLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -417,8 +573,60 @@ export default function ContactSegments() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
+          </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-2">Segment Templates</h3>
+            <p className="text-muted-foreground">Start with proven segment templates and customize them for your business</p>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {segmentTemplates.map((template) => {
+              const IconComponent = template.icon;
+              const colorClasses: Record<string, string> = {
+                green: 'bg-green-100 text-green-600 border-green-200',
+                blue: 'bg-blue-100 text-blue-600 border-blue-200',
+                orange: 'bg-orange-100 text-orange-600 border-orange-200',
+                purple: 'bg-purple-100 text-purple-600 border-purple-200',
+                teal: 'bg-teal-100 text-teal-600 border-teal-200',
+                indigo: 'bg-indigo-100 text-indigo-600 border-indigo-200'
+              };
+              
+              return (
+                <Card 
+                  key={template.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => useTemplate(template)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[template.color] || 'bg-gray-100 text-gray-600'}`}>
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <p className="text-sm text-muted-foreground">Smart segment template</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {template.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">
+                        {template.conditions.rules.length} condition{template.conditions.rules.length !== 1 ? 's' : ''}
+                      </Badge>
+                      <Badge variant="outline">Auto-updating</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

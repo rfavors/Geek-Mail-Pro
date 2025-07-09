@@ -148,6 +148,7 @@ Geek Mail Pro is a modern, full-featured email marketing SaaS platform built as 
   - **CONFIRMED**: Drag-and-drop functionality working perfectly
   - ✅ Sequence naming functionality with validation
   - ✅ Professional sequence templates: Welcome Series, Product Launch, Re-engagement Flow, Abandoned Cart, Educational Drip, Customer Feedback Loop
+  - ✅ Contact segment templates with smart pre-built conditions for targeting specific audiences
 
 - **July 08, 2025**: ✅ Email forwarding system fully operational
   - Created webhook endpoint at `/api/webhook/email` for Mailgun integration
