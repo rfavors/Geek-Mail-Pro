@@ -45,52 +45,113 @@ import ReactFlow, {
   OnConnect,
   NodeTypes,
   ConnectionMode,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Custom node types for the drag-and-drop builder
 const EmailNode = ({ data, isConnectable }) => {
   return (
-    <div className="bg-white border-2 border-blue-500 rounded-lg p-3 shadow-lg min-w-[200px]">
-      <div className="flex items-center gap-2 mb-2">
-        <Mail className="h-4 w-4 text-blue-500" />
-        <span className="font-medium text-sm">{data.label}</span>
+    <div className="bg-white border-2 border-blue-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-2 bg-blue-100 rounded-full">
+          <Mail className="h-4 w-4 text-blue-600" />
+        </div>
+        <div>
+          <div className="font-semibold text-sm text-gray-800">{data.label}</div>
+          <div className="text-xs text-gray-500">Email Step</div>
+        </div>
       </div>
-      <div className="text-xs text-gray-600">
-        <div>Subject: {data.subject || 'No subject'}</div>
-        <div>Delay: {data.delay || '0'} days</div>
+      <div className="text-xs text-gray-600 space-y-1">
+        <div className="truncate">
+          <span className="font-medium">Subject:</span> {data.subject || 'Click to edit'}
+        </div>
+        <div>
+          <span className="font-medium">Delay:</span> {data.delay || '0'} days
+        </div>
       </div>
-      <div className="handle-container">
-        {/* React Flow will add handles automatically */}
-      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
     </div>
   );
 };
 
 const DelayNode = ({ data, isConnectable }) => {
   return (
-    <div className="bg-white border-2 border-yellow-500 rounded-lg p-3 shadow-lg min-w-[200px]">
-      <div className="flex items-center gap-2 mb-2">
-        <Clock className="h-4 w-4 text-yellow-500" />
-        <span className="font-medium text-sm">{data.label}</span>
+    <div className="bg-white border-2 border-yellow-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-2 bg-yellow-100 rounded-full">
+          <Clock className="h-4 w-4 text-yellow-600" />
+        </div>
+        <div>
+          <div className="font-semibold text-sm text-gray-800">{data.label}</div>
+          <div className="text-xs text-gray-500">Wait Step</div>
+        </div>
       </div>
       <div className="text-xs text-gray-600">
-        Wait: {data.duration || '1'} {data.unit || 'days'}
+        <span className="font-medium">Wait:</span> {data.duration || '1'} {data.unit || 'days'}
       </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
     </div>
   );
 };
 
 const ConditionNode = ({ data, isConnectable }) => {
   return (
-    <div className="bg-white border-2 border-purple-500 rounded-lg p-3 shadow-lg min-w-[200px]">
-      <div className="flex items-center gap-2 mb-2">
-        <GitBranch className="h-4 w-4 text-purple-500" />
-        <span className="font-medium text-sm">{data.label}</span>
+    <div className="bg-white border-2 border-purple-500 rounded-lg p-4 shadow-lg min-w-[220px] relative">
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-2 bg-purple-100 rounded-full">
+          <GitBranch className="h-4 w-4 text-purple-600" />
+        </div>
+        <div>
+          <div className="font-semibold text-sm text-gray-800">{data.label}</div>
+          <div className="text-xs text-gray-500">Condition Step</div>
+        </div>
       </div>
       <div className="text-xs text-gray-600">
-        If: {data.condition || 'Email opened'}
+        <span className="font-medium">If:</span> {data.condition || 'Email opened'}
       </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="else"
+        style={{ background: '#555' }}
+        isConnectable={isConnectable}
+      />
     </div>
   );
 };
@@ -106,8 +167,16 @@ const initialNodes: Node[] = [
     id: 'start',
     type: 'input',
     data: { label: 'Sequence Start' },
-    position: { x: 250, y: 25 },
-    className: 'bg-green-100 border-green-500',
+    position: { x: 400, y: 50 },
+    style: {
+      background: '#dcfce7',
+      border: '2px solid #16a34a',
+      borderRadius: '8px',
+      padding: '12px',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#166534',
+    },
   },
 ];
 
@@ -179,41 +248,41 @@ export default function EmailSequences() {
       id: `email-${Date.now()}`,
       type: 'email',
       data: { 
-        label: 'Email Step',
+        label: `Email ${nodes.filter(n => n.type === 'email').length + 1}`,
         subject: 'Welcome to our sequence',
         delay: '0'
       },
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      position: { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
     };
     setNodes((nds) => nds.concat(newNode));
-  }, [setNodes]);
+  }, [setNodes, nodes]);
 
   const addDelayNode = useCallback(() => {
     const newNode: Node = {
       id: `delay-${Date.now()}`,
       type: 'delay',
       data: { 
-        label: 'Wait Step',
+        label: `Wait ${nodes.filter(n => n.type === 'delay').length + 1}`,
         duration: '1',
         unit: 'days'
       },
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      position: { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
     };
     setNodes((nds) => nds.concat(newNode));
-  }, [setNodes]);
+  }, [setNodes, nodes]);
 
   const addConditionNode = useCallback(() => {
     const newNode: Node = {
       id: `condition-${Date.now()}`,
       type: 'condition',
       data: { 
-        label: 'Condition',
+        label: `Condition ${nodes.filter(n => n.type === 'condition').length + 1}`,
         condition: 'Email opened'
       },
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      position: { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
     };
     setNodes((nds) => nds.concat(newNode));
-  }, [setNodes]);
+  }, [setNodes, nodes]);
 
   const saveSequence = useCallback(() => {
     const flowData = {
@@ -258,58 +327,113 @@ export default function EmailSequences() {
 
       {/* Sequence Builder Dialog */}
       <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
-        <DialogContent className="max-w-7xl h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] h-[95vh] p-0">
+          <DialogHeader className="p-6 pb-4">
             <DialogTitle>Email Sequence Builder</DialogTitle>
             <DialogDescription>
-              Drag and drop components to build your automated email sequence
+              Drag components from the sidebar to the canvas and connect them to build your automated email sequence
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex h-full gap-4">
-            {/* Toolbar */}
-            <div className="w-64 bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-4">Components</h3>
-              <div className="space-y-2">
-                <Button 
-                  onClick={addEmailNode}
-                  variant="outline" 
-                  className="w-full justify-start"
+          <div className="flex h-[calc(100%-80px)] gap-4 px-6 pb-6">
+            {/* Draggable Toolbar */}
+            <div className="w-72 bg-gray-50 p-4 rounded-lg border">
+              <h3 className="font-semibold mb-4 text-gray-800">Drag Components</h3>
+              
+              {/* Draggable Components */}
+              <div className="space-y-3">
+                <div 
+                  className="bg-white border-2 border-blue-300 rounded-lg p-3 cursor-grab hover:border-blue-500 transition-colors shadow-sm"
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('application/reactflow', 'email');
+                    event.dataTransfer.effectAllowed = 'move';
+                  }}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Email
-                </Button>
-                <Button 
-                  onClick={addDelayNode}
-                  variant="outline" 
-                  className="w-full justify-start"
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Email Step</div>
+                      <div className="text-xs text-gray-500">Send an email</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-white border-2 border-yellow-300 rounded-lg p-3 cursor-grab hover:border-yellow-500 transition-colors shadow-sm"
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('application/reactflow', 'delay');
+                    event.dataTransfer.effectAllowed = 'move';
+                  }}
                 >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Delay
-                </Button>
-                <Button 
-                  onClick={addConditionNode}
-                  variant="outline" 
-                  className="w-full justify-start"
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 rounded-full">
+                      <Clock className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Wait Step</div>
+                      <div className="text-xs text-gray-500">Add a delay</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-white border-2 border-purple-300 rounded-lg p-3 cursor-grab hover:border-purple-500 transition-colors shadow-sm"
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('application/reactflow', 'condition');
+                    event.dataTransfer.effectAllowed = 'move';
+                  }}
                 >
-                  <GitBranch className="h-4 w-4 mr-2" />
-                  Condition
-                </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-full">
+                      <GitBranch className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Condition</div>
+                      <div className="text-xs text-gray-500">Branch logic</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div className="mt-6">
+              <div className="mt-8 space-y-3">
                 <Button 
                   onClick={saveSequence}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={createSequenceMutation.isPending}
                 >
                   {createSequenceMutation.isPending ? "Saving..." : "Save Sequence"}
                 </Button>
+                
+                <Button 
+                  onClick={() => {
+                    setNodes(initialNodes);
+                    setEdges([]);
+                  }}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Clear Canvas
+                </Button>
+              </div>
+
+              <div className="mt-6 p-3 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-sm text-blue-800 mb-2">Instructions:</h4>
+                <ul className="text-xs text-blue-700 space-y-1">
+                  <li>• Drag components to the canvas</li>
+                  <li>• Connect nodes by dragging handles</li>
+                  <li>• Click nodes to edit settings</li>
+                  <li>• Use mouse wheel to zoom</li>
+                </ul>
               </div>
             </div>
 
-            {/* Flow Builder */}
-            <div className="flex-1 bg-gray-100 rounded-lg">
+            {/* Large Flow Builder Canvas */}
+            <div className="flex-1 bg-gray-100 rounded-lg border overflow-hidden">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -319,11 +443,57 @@ export default function EmailSequences() {
                 nodeTypes={nodeTypes}
                 connectionMode={ConnectionMode.Loose}
                 fitView
-                className="bg-teal-50"
+                className="bg-gradient-to-br from-blue-50 to-indigo-50"
+                onDrop={(event) => {
+                  event.preventDefault();
+                  
+                  const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+                  const type = event.dataTransfer.getData('application/reactflow');
+
+                  if (typeof type === 'undefined' || !type) {
+                    return;
+                  }
+
+                  const position = {
+                    x: event.clientX - reactFlowBounds.left - 110,
+                    y: event.clientY - reactFlowBounds.top - 50,
+                  };
+
+                  const nodeCount = nodes.filter(n => n.type === type).length;
+                  
+                  const newNode: Node = {
+                    id: `${type}-${Date.now()}`,
+                    type,
+                    position,
+                    data: { 
+                      label: type === 'email' ? `Email ${nodeCount + 1}` :
+                             type === 'delay' ? `Wait ${nodeCount + 1}` :
+                             `Condition ${nodeCount + 1}`,
+                      ...(type === 'email' && { subject: 'Click to edit subject', delay: '0' }),
+                      ...(type === 'delay' && { duration: '1', unit: 'days' }),
+                      ...(type === 'condition' && { condition: 'Email opened' }),
+                    },
+                  };
+
+                  setNodes((nds) => nds.concat(newNode));
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                }}
               >
                 <Controls />
-                <MiniMap />
-                <Background variant="dots" gap={12} size={1} />
+                <MiniMap 
+                  nodeColor={(node) => {
+                    switch (node.type) {
+                      case 'email': return '#3b82f6';
+                      case 'delay': return '#eab308';
+                      case 'condition': return '#8b5cf6';
+                      default: return '#6b7280';
+                    }
+                  }}
+                />
+                <Background variant="dots" gap={20} size={1} color="#cbd5e1" />
               </ReactFlow>
             </div>
           </div>
