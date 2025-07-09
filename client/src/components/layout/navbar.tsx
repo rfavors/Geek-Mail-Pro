@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Logo } from "@/components/ui/logo";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   Bot, 
@@ -31,11 +32,8 @@ export function Navbar() {
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-            <Bot className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-bold">Geek Mail Pro</span>
+        <Link href="/" className="flex items-center">
+          <Logo size="md" variant="full" />
         </Link>
 
         <div className="ml-auto flex items-center space-x-4">

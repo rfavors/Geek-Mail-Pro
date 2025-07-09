@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/logo";
 import { 
   Sparkles, 
   Play, 
@@ -29,11 +30,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                <Bot className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Geek Mail Pro</span>
+            <div className="flex items-center">
+              <Logo size="lg" variant="full" />
             </div>
 
             {/* Desktop Navigation */}
@@ -65,7 +63,7 @@ export default function Landing() {
             </Badge>
             <h1 className="text-5xl lg:text-6xl font-bold mb-6">
               Email Marketing for{" "}
-              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Geeks
               </span>
             </h1>
@@ -86,7 +84,7 @@ export default function Landing() {
 
           {/* Hero Dashboard Preview */}
           <div className="relative max-w-6xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-600/20 blur-3xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl"></div>
             <Card className="relative border shadow-2xl">
               <CardContent className="p-0">
                 <img 

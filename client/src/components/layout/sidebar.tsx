@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 import { 
   LayoutDashboard, 
   Mail, 
@@ -32,6 +33,9 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col bg-background border-r">
       <div className="flex flex-1 flex-col pt-5 pb-4 overflow-y-auto">
+        <div className="flex items-center px-4 mb-8">
+          <Logo size="md" variant="full" />
+        </div>
         <nav className="mt-5 flex-1 px-2 space-y-1">
           {navigation.map((item) => {
             const isActive = location === item.href || 
