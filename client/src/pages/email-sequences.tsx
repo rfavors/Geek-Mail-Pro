@@ -294,6 +294,8 @@ export default function EmailSequences() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isEditingNode, setIsEditingNode] = useState(false);
+  const [sequenceName, setSequenceName] = useState('');
+  const [sequenceDescription, setSequenceDescription] = useState('');
 
   // Fetch email sequences
   const { data: sequences = [], isLoading: sequencesLoading } = useQuery({
@@ -416,14 +418,24 @@ export default function EmailSequences() {
   }, [setNodes, nodes]);
 
   const saveSequence = useCallback(() => {
+    // Validate sequence name
+    if (!sequenceName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a sequence name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const flowData = {
       nodes,
       edges,
     };
 
     const sequenceData = {
-      name: selectedSequence?.name || 'My Email Sequence',
-      description: selectedSequence?.description || 'Automated email sequence',
+      name: sequenceName.trim(),
+      description: sequenceDescription.trim(),
       triggerType: selectedSequence?.triggerType || 'signup',
       flowData,
       status: selectedSequence?.status || 'draft',
@@ -442,7 +454,7 @@ export default function EmailSequences() {
       setNodes(initialNodes);
       setEdges([]);
     }
-  }, [nodes, edges, selectedSequence, isEditing, createSequenceMutation, updateSequenceMutation, setNodes, setEdges]);
+  }, [nodes, edges, sequenceName, sequenceDescription, selectedSequence, isEditing, createSequenceMutation, updateSequenceMutation, setNodes, setEdges, toast]);
 
   // Open builder for new sequence
   const openNewSequenceBuilder = useCallback(() => {
@@ -451,6 +463,8 @@ export default function EmailSequences() {
     setNodes(initialNodes);
     setEdges([]);
     setSelectedNode(null);
+    setSequenceName('');
+    setSequenceDescription('');
     setIsBuilderOpen(true);
   }, [setNodes, setEdges]);
 
@@ -458,6 +472,8 @@ export default function EmailSequences() {
   const openEditSequenceBuilder = useCallback((sequence) => {
     setSelectedSequence(sequence);
     setIsEditing(true);
+    setSequenceName(sequence.name || '');
+    setSequenceDescription(sequence.description || '');
     
     // Load sequence flow data if available
     if (sequence.flowData) {
@@ -512,19 +528,47 @@ export default function EmailSequences() {
           setNodes(initialNodes);
           setEdges([]);
           setSelectedNode(null);
+          setSequenceName('');
+          setSequenceDescription('');
         }
       }}>
         <DialogContent className="max-w-[95vw] h-[95vh] p-0">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>
-              {isEditing ? `Edit: ${selectedSequence?.name}` : 'Email Sequence Builder'}
+              {isEditing ? `Edit: ${sequenceName || selectedSequence?.name}` : 'Email Sequence Builder'}
             </DialogTitle>
             <DialogDescription>
               {isEditing ? 'Modify your existing email sequence' : 'Drag components from the sidebar to the canvas and connect them to build your automated email sequence'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex h-[calc(100%-80px)] gap-4 px-6 pb-6">
+          {/* Sequence Name and Description */}
+          <div className="px-6 pb-4 space-y-4 border-b">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="sequence-name">Sequence Name</Label>
+                <Input
+                  id="sequence-name"
+                  value={sequenceName}
+                  onChange={(e) => setSequenceName(e.target.value)}
+                  placeholder="Enter sequence name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="sequence-description">Description (Optional)</Label>
+                <Input
+                  id="sequence-description"
+                  value={sequenceDescription}
+                  onChange={(e) => setSequenceDescription(e.target.value)}
+                  placeholder="Describe what this sequence does"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex h-[calc(100%-180px)] gap-4 px-6 pb-6">
             {/* Draggable Toolbar */}
             <div className="w-72 bg-gray-50 p-4 rounded-lg border">
               <h3 className="font-semibold mb-4 text-gray-800">Drag Components</h3>
@@ -722,7 +766,7 @@ export default function EmailSequences() {
                 <Button 
                   onClick={saveSequence}
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={createSequenceMutation.isPending || updateSequenceMutation.isPending}
+                  disabled={createSequenceMutation.isPending || updateSequenceMutation.isPending || !sequenceName.trim()}
                 >
                   {(createSequenceMutation.isPending || updateSequenceMutation.isPending) ? "Saving..." : 
                    isEditing ? "Update Sequence" : "Save Sequence"}
