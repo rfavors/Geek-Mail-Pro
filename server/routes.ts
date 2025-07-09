@@ -16,7 +16,11 @@ import {
   insertCampaignSchema,
   insertLeadSourceSchema,
   insertLeadSchema,
-  insertLeadCampaignSchema
+  insertLeadCampaignSchema,
+  insertEmailSequenceSchema,
+  insertEmailSequenceStepSchema,
+  insertEmailSequenceSubscriberSchema,
+  insertEmailSequenceAnalyticsSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -722,6 +726,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting lead campaign:", error);
       res.status(500).json({ message: "Failed to delete lead campaign" });
+    }
+  });
+
+  // Email sequence routes
+  app.post('/api/email-sequences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sequenceData = insertEmailSequenceSchema.parse({ ...req.body, userId });
+      
+      const sequence = await storage.createEmailSequence(sequenceData);
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error creating email sequence:", error);
+      res.status(500).json({ message: "Failed to create email sequence" });
+    }
+  });
+
+  app.get('/api/email-sequences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sequences = await storage.getEmailSequencesByUserId(userId);
+      res.json(sequences);
+    } catch (error) {
+      console.error("Error fetching email sequences:", error);
+      res.status(500).json({ message: "Failed to fetch email sequences" });
+    }
+  });
+
+  app.get('/api/email-sequences/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const sequence = await storage.getEmailSequence(Number(id));
+      
+      if (!sequence) {
+        return res.status(404).json({ message: "Email sequence not found" });
+      }
+      
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error fetching email sequence:", error);
+      res.status(500).json({ message: "Failed to fetch email sequence" });
+    }
+  });
+
+  app.patch('/api/email-sequences/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const sequence = await storage.updateEmailSequence(Number(id), updates);
+      res.json(sequence);
+    } catch (error) {
+      console.error("Error updating email sequence:", error);
+      res.status(500).json({ message: "Failed to update email sequence" });
+    }
+  });
+
+  app.delete('/api/email-sequences/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEmailSequence(Number(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting email sequence:", error);
+      res.status(500).json({ message: "Failed to delete email sequence" });
+    }
+  });
+
+  // Email sequence steps
+  app.post('/api/email-sequences/:sequenceId/steps', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sequenceId } = req.params;
+      const stepData = insertEmailSequenceStepSchema.parse({ 
+        ...req.body, 
+        sequenceId: Number(sequenceId) 
+      });
+      
+      const step = await storage.createEmailSequenceStep(stepData);
+      res.json(step);
+    } catch (error) {
+      console.error("Error creating email sequence step:", error);
+      res.status(500).json({ message: "Failed to create email sequence step" });
+    }
+  });
+
+  app.get('/api/email-sequences/:sequenceId/steps', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sequenceId } = req.params;
+      const steps = await storage.getEmailSequenceStepsBySequenceId(Number(sequenceId));
+      res.json(steps);
+    } catch (error) {
+      console.error("Error fetching email sequence steps:", error);
+      res.status(500).json({ message: "Failed to fetch email sequence steps" });
+    }
+  });
+
+  // Email sequence analytics
+  app.get('/api/email-sequences/:sequenceId/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sequenceId } = req.params;
+      const analytics = await storage.getEmailSequenceAnalyticsBySequenceId(Number(sequenceId));
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching email sequence analytics:", error);
+      res.status(500).json({ message: "Failed to fetch email sequence analytics" });
+    }
+  });
+
+  app.get('/api/email-sequences/:sequenceId/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sequenceId } = req.params;
+      const stats = await storage.getEmailSequenceStats(Number(sequenceId));
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching email sequence stats:", error);
+      res.status(500).json({ message: "Failed to fetch email sequence stats" });
     }
   });
 

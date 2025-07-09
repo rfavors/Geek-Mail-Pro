@@ -229,6 +229,64 @@ export const leadCampaigns = pgTable("lead_campaigns", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Email Sequence Builder Tables
+export const emailSequences = pgTable("email_sequences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  status: varchar("status").notNull().default("draft"), // draft, active, paused, archived
+  triggerType: varchar("trigger_type").notNull(), // signup, purchase, abandoned_cart, date_based, manual
+  triggerData: jsonb("trigger_data"), // configuration for trigger
+  flowData: jsonb("flow_data").notNull(), // drag-drop visual flow data
+  settings: jsonb("settings"), // sequence settings like delays, timezones
+  totalSubscribers: integer("total_subscribers").default(0),
+  activeSubscribers: integer("active_subscribers").default(0),
+  completedSubscribers: integer("completed_subscribers").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailSequenceSteps = pgTable("email_sequence_steps", {
+  id: serial("id").primaryKey(),
+  sequenceId: integer("sequence_id").notNull().references(() => emailSequences.id, { onDelete: "cascade" }),
+  stepId: varchar("step_id").notNull(), // unique within sequence
+  stepType: varchar("step_type").notNull(), // email, delay, condition, action
+  name: varchar("name").notNull(),
+  position: jsonb("position"), // x, y coordinates for visual editor
+  configuration: jsonb("configuration").notNull(), // step-specific config
+  nextSteps: jsonb("next_steps"), // array of next step IDs with conditions
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailSequenceSubscribers = pgTable("email_sequence_subscribers", {
+  id: serial("id").primaryKey(),
+  sequenceId: integer("sequence_id").notNull().references(() => emailSequences.id, { onDelete: "cascade" }),
+  contactId: integer("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  currentStepId: varchar("current_step_id"),
+  status: varchar("status").notNull().default("active"), // active, paused, completed, unsubscribed
+  startedAt: timestamp("started_at").defaultNow(),
+  lastEmailSentAt: timestamp("last_email_sent_at"),
+  nextEmailScheduledAt: timestamp("next_email_scheduled_at"),
+  completedAt: timestamp("completed_at"),
+  metadata: jsonb("metadata"), // tracking data, custom fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailSequenceAnalytics = pgTable("email_sequence_analytics", {
+  id: serial("id").primaryKey(),
+  sequenceId: integer("sequence_id").notNull().references(() => emailSequences.id, { onDelete: "cascade" }),
+  stepId: varchar("step_id").notNull(),
+  contactId: integer("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  eventType: varchar("event_type").notNull(), // sent, delivered, opened, clicked, bounced, unsubscribed
+  eventData: jsonb("event_data"), // additional event information
+  timestamp: timestamp("timestamp").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const userRelations = relations(users, ({ many }) => ({
   domains: many(domains),
@@ -238,6 +296,7 @@ export const userRelations = relations(users, ({ many }) => ({
   leadSources: many(leadSources),
   leads: many(leads),
   leadCampaigns: many(leadCampaigns),
+  emailSequences: many(emailSequences),
 }));
 
 export const domainRelations = relations(domains, ({ one, many }) => ({
@@ -294,6 +353,27 @@ export const leadRelations = relations(leads, ({ one }) => ({
 
 export const leadCampaignRelations = relations(leadCampaigns, ({ one }) => ({
   user: one(users, { fields: [leadCampaigns.userId], references: [users.id] }),
+}));
+
+export const emailSequenceRelations = relations(emailSequences, ({ one, many }) => ({
+  user: one(users, { fields: [emailSequences.userId], references: [users.id] }),
+  steps: many(emailSequenceSteps),
+  subscribers: many(emailSequenceSubscribers),
+  analytics: many(emailSequenceAnalytics),
+}));
+
+export const emailSequenceStepRelations = relations(emailSequenceSteps, ({ one }) => ({
+  sequence: one(emailSequences, { fields: [emailSequenceSteps.sequenceId], references: [emailSequences.id] }),
+}));
+
+export const emailSequenceSubscriberRelations = relations(emailSequenceSubscribers, ({ one }) => ({
+  sequence: one(emailSequences, { fields: [emailSequenceSubscribers.sequenceId], references: [emailSequences.id] }),
+  contact: one(contacts, { fields: [emailSequenceSubscribers.contactId], references: [contacts.id] }),
+}));
+
+export const emailSequenceAnalyticsRelations = relations(emailSequenceAnalytics, ({ one }) => ({
+  sequence: one(emailSequences, { fields: [emailSequenceAnalytics.sequenceId], references: [emailSequences.id] }),
+  contact: one(contacts, { fields: [emailSequenceAnalytics.contactId], references: [contacts.id] }),
 }));
 
 // Insert schemas
@@ -378,6 +458,34 @@ export const insertLeadCampaignSchema = createInsertSchema(leadCampaigns).omit({
   updatedAt: true,
 });
 
+export const insertEmailSequenceSchema = createInsertSchema(emailSequences).omit({
+  id: true,
+  totalSubscribers: true,
+  activeSubscribers: true,
+  completedSubscribers: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmailSequenceStepSchema = createInsertSchema(emailSequenceSteps).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmailSequenceSubscriberSchema = createInsertSchema(emailSequenceSubscribers).omit({
+  id: true,
+  startedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmailSequenceAnalyticsSchema = createInsertSchema(emailSequenceAnalytics).omit({
+  id: true,
+  timestamp: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -404,3 +512,11 @@ export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
 export type InsertLeadCampaign = z.infer<typeof insertLeadCampaignSchema>;
 export type LeadCampaign = typeof leadCampaigns.$inferSelect;
+export type InsertEmailSequence = z.infer<typeof insertEmailSequenceSchema>;
+export type EmailSequence = typeof emailSequences.$inferSelect;
+export type InsertEmailSequenceStep = z.infer<typeof insertEmailSequenceStepSchema>;
+export type EmailSequenceStep = typeof emailSequenceSteps.$inferSelect;
+export type InsertEmailSequenceSubscriber = z.infer<typeof insertEmailSequenceSubscriberSchema>;
+export type EmailSequenceSubscriber = typeof emailSequenceSubscribers.$inferSelect;
+export type InsertEmailSequenceAnalytics = z.infer<typeof insertEmailSequenceAnalyticsSchema>;
+export type EmailSequenceAnalytics = typeof emailSequenceAnalytics.$inferSelect;

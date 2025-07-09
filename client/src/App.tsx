@@ -9,6 +9,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
 import LeadGeneration from "@/pages/lead-generation";
+import EmailSequences from "@/pages/email-sequences";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
@@ -61,6 +62,7 @@ function Router() {
             <Route path="/contacts" component={Contacts} />
             <Route path="/domain-settings" component={DomainSettings} />
             <Route path="/lead-generation" component={LeadGeneration} />
+            <Route path="/email-sequences" component={EmailSequences} />
             <Route path="/analytics" component={() => <div className="space-y-6"><h1 className="text-3xl font-bold">Analytics</h1><p className="text-muted-foreground">Detailed analytics coming soon...</p></div>} />
             <Route path="/billing" component={Billing} />
             <Route path="/settings" component={() => <div className="space-y-6"><h1 className="text-3xl font-bold">Settings</h1><p className="text-muted-foreground">Account settings coming soon...</p></div>} />

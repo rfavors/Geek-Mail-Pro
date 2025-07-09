@@ -13,6 +13,10 @@ import {
   leadSources,
   leads,
   leadCampaigns,
+  emailSequences,
+  emailSequenceSteps,
+  emailSequenceSubscribers,
+  emailSequenceAnalytics,
   type User,
   type UpsertUser,
   type InsertDomain,
@@ -38,6 +42,14 @@ import {
   type Lead,
   type InsertLeadCampaign,
   type LeadCampaign,
+  type InsertEmailSequence,
+  type EmailSequence,
+  type InsertEmailSequenceStep,
+  type EmailSequenceStep,
+  type InsertEmailSequenceSubscriber,
+  type EmailSequenceSubscriber,
+  type InsertEmailSequenceAnalytics,
+  type EmailSequenceAnalytics,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -132,6 +144,38 @@ export interface IStorage {
   getLeadCampaignsByUserId(userId: string): Promise<LeadCampaign[]>;
   updateLeadCampaign(id: number, updates: Partial<LeadCampaign>): Promise<LeadCampaign>;
   deleteLeadCampaign(id: number): Promise<void>;
+
+  // Email sequence operations
+  createEmailSequence(sequence: InsertEmailSequence): Promise<EmailSequence>;
+  getEmailSequencesByUserId(userId: string): Promise<EmailSequence[]>;
+  getEmailSequence(id: number): Promise<EmailSequence | undefined>;
+  updateEmailSequence(id: number, updates: Partial<EmailSequence>): Promise<EmailSequence>;
+  deleteEmailSequence(id: number): Promise<void>;
+  
+  // Email sequence step operations
+  createEmailSequenceStep(step: InsertEmailSequenceStep): Promise<EmailSequenceStep>;
+  getEmailSequenceStepsBySequenceId(sequenceId: number): Promise<EmailSequenceStep[]>;
+  updateEmailSequenceStep(id: number, updates: Partial<EmailSequenceStep>): Promise<EmailSequenceStep>;
+  deleteEmailSequenceStep(id: number): Promise<void>;
+  
+  // Email sequence subscriber operations
+  createEmailSequenceSubscriber(subscriber: InsertEmailSequenceSubscriber): Promise<EmailSequenceSubscriber>;
+  getEmailSequenceSubscribersBySequenceId(sequenceId: number): Promise<EmailSequenceSubscriber[]>;
+  updateEmailSequenceSubscriber(id: number, updates: Partial<EmailSequenceSubscriber>): Promise<EmailSequenceSubscriber>;
+  deleteEmailSequenceSubscriber(id: number): Promise<void>;
+  
+  // Email sequence analytics operations
+  createEmailSequenceAnalytics(analytics: InsertEmailSequenceAnalytics): Promise<EmailSequenceAnalytics>;
+  getEmailSequenceAnalyticsBySequenceId(sequenceId: number): Promise<EmailSequenceAnalytics[]>;
+  getEmailSequenceStats(sequenceId: number): Promise<{
+    totalSent: number;
+    totalOpened: number;
+    totalClicked: number;
+    totalBounced: number;
+    totalUnsubscribed: number;
+    openRate: number;
+    clickRate: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -601,6 +645,161 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLeadCampaign(id: number): Promise<void> {
     await db.delete(leadCampaigns).where(eq(leadCampaigns.id, id));
+  }
+
+  // Email sequence operations
+  async createEmailSequence(sequence: InsertEmailSequence): Promise<EmailSequence> {
+    const [newSequence] = await db
+      .insert(emailSequences)
+      .values(sequence)
+      .returning();
+    return newSequence;
+  }
+
+  async getEmailSequencesByUserId(userId: string): Promise<EmailSequence[]> {
+    return await db
+      .select()
+      .from(emailSequences)
+      .where(eq(emailSequences.userId, userId))
+      .orderBy(desc(emailSequences.createdAt));
+  }
+
+  async getEmailSequence(id: number): Promise<EmailSequence | undefined> {
+    const [sequence] = await db
+      .select()
+      .from(emailSequences)
+      .where(eq(emailSequences.id, id));
+    return sequence;
+  }
+
+  async updateEmailSequence(id: number, updates: Partial<EmailSequence>): Promise<EmailSequence> {
+    const [updated] = await db
+      .update(emailSequences)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(emailSequences.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailSequence(id: number): Promise<void> {
+    await db.delete(emailSequences).where(eq(emailSequences.id, id));
+  }
+
+  // Email sequence step operations
+  async createEmailSequenceStep(step: InsertEmailSequenceStep): Promise<EmailSequenceStep> {
+    const [newStep] = await db
+      .insert(emailSequenceSteps)
+      .values(step)
+      .returning();
+    return newStep;
+  }
+
+  async getEmailSequenceStepsBySequenceId(sequenceId: number): Promise<EmailSequenceStep[]> {
+    return await db
+      .select()
+      .from(emailSequenceSteps)
+      .where(eq(emailSequenceSteps.sequenceId, sequenceId))
+      .orderBy(emailSequenceSteps.createdAt);
+  }
+
+  async updateEmailSequenceStep(id: number, updates: Partial<EmailSequenceStep>): Promise<EmailSequenceStep> {
+    const [updated] = await db
+      .update(emailSequenceSteps)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(emailSequenceSteps.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailSequenceStep(id: number): Promise<void> {
+    await db.delete(emailSequenceSteps).where(eq(emailSequenceSteps.id, id));
+  }
+
+  // Email sequence subscriber operations
+  async createEmailSequenceSubscriber(subscriber: InsertEmailSequenceSubscriber): Promise<EmailSequenceSubscriber> {
+    const [newSubscriber] = await db
+      .insert(emailSequenceSubscribers)
+      .values(subscriber)
+      .returning();
+    return newSubscriber;
+  }
+
+  async getEmailSequenceSubscribersBySequenceId(sequenceId: number): Promise<EmailSequenceSubscriber[]> {
+    return await db
+      .select()
+      .from(emailSequenceSubscribers)
+      .where(eq(emailSequenceSubscribers.sequenceId, sequenceId))
+      .orderBy(desc(emailSequenceSubscribers.createdAt));
+  }
+
+  async updateEmailSequenceSubscriber(id: number, updates: Partial<EmailSequenceSubscriber>): Promise<EmailSequenceSubscriber> {
+    const [updated] = await db
+      .update(emailSequenceSubscribers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(emailSequenceSubscribers.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailSequenceSubscriber(id: number): Promise<void> {
+    await db.delete(emailSequenceSubscribers).where(eq(emailSequenceSubscribers.id, id));
+  }
+
+  // Email sequence analytics operations
+  async createEmailSequenceAnalytics(analytics: InsertEmailSequenceAnalytics): Promise<EmailSequenceAnalytics> {
+    const [newAnalytics] = await db
+      .insert(emailSequenceAnalytics)
+      .values(analytics)
+      .returning();
+    return newAnalytics;
+  }
+
+  async getEmailSequenceAnalyticsBySequenceId(sequenceId: number): Promise<EmailSequenceAnalytics[]> {
+    return await db
+      .select()
+      .from(emailSequenceAnalytics)
+      .where(eq(emailSequenceAnalytics.sequenceId, sequenceId))
+      .orderBy(desc(emailSequenceAnalytics.timestamp));
+  }
+
+  async getEmailSequenceStats(sequenceId: number): Promise<{
+    totalSent: number;
+    totalOpened: number;
+    totalClicked: number;
+    totalBounced: number;
+    totalUnsubscribed: number;
+    openRate: number;
+    clickRate: number;
+  }> {
+    const stats = await db
+      .select({
+        eventType: emailSequenceAnalytics.eventType,
+        count: sql<number>`count(*)`,
+      })
+      .from(emailSequenceAnalytics)
+      .where(eq(emailSequenceAnalytics.sequenceId, sequenceId))
+      .groupBy(emailSequenceAnalytics.eventType);
+
+    const statMap = stats.reduce((acc, { eventType, count }) => {
+      acc[eventType] = count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const totalSent = statMap.sent || 0;
+    const totalOpened = statMap.opened || 0;
+    const totalClicked = statMap.clicked || 0;
+    const totalBounced = statMap.bounced || 0;
+    const totalUnsubscribed = statMap.unsubscribed || 0;
+
+    return {
+      totalSent,
+      totalOpened,
+      totalClicked,
+      totalBounced,
+      totalUnsubscribed,
+      openRate: totalSent > 0 ? (totalOpened / totalSent) * 100 : 0,
+      clickRate: totalSent > 0 ? (totalClicked / totalSent) * 100 : 0,
+    };
   }
 }
 

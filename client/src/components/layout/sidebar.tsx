@@ -8,12 +8,14 @@ import {
   BarChart3,
   Settings,
   CreditCard,
-  Zap
+  Zap,
+  GitBranch
 } from "lucide-react";
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Campaigns', href: '/campaigns', icon: Mail },
+  { name: 'Email Sequences', href: '/email-sequences', icon: GitBranch },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Lead Generation', href: '/lead-generation', icon: Zap },
   { name: 'Domain Settings', href: '/domain-settings', icon: Globe },
