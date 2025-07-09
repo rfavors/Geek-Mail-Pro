@@ -1,9 +1,43 @@
 console.log("ENV VARS:", process.env);
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
+import helmet from "helmet";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Production security middleware
+if (process.env.NODE_ENV === 'production') {
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: ["'self'", "https:"],
+        mediaSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        childSrc: ["'none'"],
+        workerSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        formAction: ["'self'"],
+        baseUri: ["'self'"],
+        manifestSrc: ["'self'"]
+      }
+    }
+  }));
+  
+  app.use(compression());
+  
+  app.use(cors({
+    origin: process.env.REPLIT_DOMAINS?.split(',') || ['localhost:5000'],
+    credentials: true
+  }));
+}
 
 // Health check for webhook accessibility
 app.get('/api/webhook/email', (req, res) => {

@@ -91,6 +91,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check endpoint for deployment monitoring
+  app.get('/api/health', async (req, res) => {
+    try {
+      // Basic health check
+      const healthStatus = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        version: process.env.npm_package_version || '1.0.0'
+      };
+
+      // Check database connection
+      try {
+        await storage.getUserStats('health-check');
+        healthStatus.database = 'connected';
+      } catch (dbError) {
+        healthStatus.database = 'disconnected';
+        healthStatus.status = 'unhealthy';
+      }
+
+      const statusCode = healthStatus.status === 'healthy' ? 200 : 503;
+      res.status(statusCode).json(healthStatus);
+    } catch (error) {
+      console.error('Health check failed:', error);
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 
