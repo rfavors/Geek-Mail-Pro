@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,7 +25,11 @@ import {
   Minus,
   Calendar,
   Users,
-  Mail
+  Mail,
+  Plus,
+  Edit,
+  Trash2,
+  GripVertical
 } from "lucide-react";
 import {
   Form,
@@ -65,6 +69,13 @@ const campaignSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
 
+interface EmailComponent {
+  id: string;
+  type: 'text' | 'image' | 'button' | 'divider' | 'spacer';
+  content: any;
+  styles: any;
+}
+
 interface CampaignBuilderProps {
   campaign?: any;
   onSave: () => void;
@@ -76,6 +87,105 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
   const queryClient = useQueryClient();
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [selectedLists, setSelectedLists] = useState<number[]>([]);
+  const [emailComponents, setEmailComponents] = useState<EmailComponent[]>([
+    {
+      id: 'header',
+      type: 'text',
+      content: {
+        text: 'Spring Sale Event',
+        tag: 'h1'
+      },
+      styles: {
+        background: 'linear-gradient(135deg, #FF6B35 0%, #8B5CF6 100%)',
+        color: '#ffffff',
+        padding: '40px 20px',
+        textAlign: 'center',
+        fontSize: '28px',
+        fontWeight: 'bold',
+        margin: '0'
+      }
+    },
+    {
+      id: 'subtitle',
+      type: 'text',
+      content: {
+        text: 'Limited time offer - Don\'t miss out!',
+        tag: 'p'
+      },
+      styles: {
+        background: 'linear-gradient(135deg, #FF6B35 0%, #8B5CF6 100%)',
+        color: '#ffffff',
+        padding: '0 20px 40px 20px',
+        textAlign: 'center',
+        opacity: '0.9',
+        margin: '0'
+      }
+    },
+    {
+      id: 'main-text',
+      type: 'text',
+      content: {
+        text: '40% Off Everything',
+        tag: 'h2'
+      },
+      styles: {
+        color: '#1F2937',
+        margin: '40px 20px 20px 20px',
+        fontSize: '24px'
+      }
+    },
+    {
+      id: 'product-image',
+      type: 'image',
+      content: {
+        src: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300',
+        alt: 'Spring sale products'
+      },
+      styles: {
+        width: '100%',
+        height: '200px',
+        objectFit: 'cover',
+        borderRadius: '8px',
+        margin: '0 20px 20px 20px',
+        display: 'block',
+        maxWidth: 'calc(100% - 40px)'
+      }
+    },
+    {
+      id: 'description',
+      type: 'text',
+      content: {
+        text: 'Get ready for spring with our biggest sale of the year! Use code SPRING40 at checkout.',
+        tag: 'p'
+      },
+      styles: {
+        color: '#6B7280',
+        lineHeight: '1.6',
+        margin: '0 20px 30px 20px'
+      }
+    },
+    {
+      id: 'cta-button',
+      type: 'button',
+      content: {
+        text: 'Shop Now',
+        url: '#'
+      },
+      styles: {
+        background: '#FF6B35',
+        color: '#ffffff',
+        padding: '15px 30px',
+        textDecoration: 'none',
+        borderRadius: '8px',
+        fontWeight: 'bold',
+        display: 'inline-block',
+        margin: '0 auto',
+        textAlign: 'center'
+      }
+    }
+  ]);
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [editingComponent, setEditingComponent] = useState<EmailComponent | null>(null);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
@@ -171,7 +281,143 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
   });
 
   const onSubmit = (data: CampaignFormData) => {
-    saveCampaignMutation.mutate(data);
+    // Generate HTML from components
+    const generatedHtml = generateEmailHtml(emailComponents);
+    const campaignData = {
+      ...data,
+      content: {
+        ...data.content,
+        html: generatedHtml
+      }
+    };
+    saveCampaignMutation.mutate(campaignData);
+  };
+
+  const generateEmailHtml = (components: EmailComponent[]) => {
+    const componentHtml = components.map(component => {
+      const styleString = Object.entries(component.styles)
+        .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value}`)
+        .join('; ');
+
+      switch (component.type) {
+        case 'text':
+          const Tag = component.content.tag || 'p';
+          return `<${Tag} style="${styleString}">${component.content.text}</${Tag}>`;
+        case 'image':
+          return `<img src="${component.content.src}" alt="${component.content.alt || ''}" style="${styleString}" />`;
+        case 'button':
+          return `<div style="text-align: center; margin: 20px;"><a href="${component.content.url}" style="${styleString}">${component.content.text}</a></div>`;
+        case 'divider':
+          return `<hr style="${styleString}" />`;
+        case 'spacer':
+          return `<div style="${styleString}"></div>`;
+        default:
+          return '';
+      }
+    }).join('');
+
+    return `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        ${componentHtml}
+        <div style="background: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
+          <p style="margin: 0; font-size: 12px; color: #6B7280;">
+            © 2025 The Geektrepreneur. All rights reserved.<br>
+            <a href="#" style="color: #FF6B35;">Unsubscribe</a> | 
+            <a href="#" style="color: #FF6B35;">Update preferences</a>
+          </p>
+        </div>
+      </div>
+    `;
+  };
+
+  const addComponent = (type: EmailComponent['type']) => {
+    const newComponent: EmailComponent = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      content: getDefaultContent(type),
+      styles: getDefaultStyles(type)
+    };
+    setEmailComponents([...emailComponents, newComponent]);
+  };
+
+  const getDefaultContent = (type: EmailComponent['type']) => {
+    switch (type) {
+      case 'text':
+        return { text: 'Enter your text here', tag: 'p' };
+      case 'image':
+        return { src: 'https://via.placeholder.com/600x200', alt: 'Image' };
+      case 'button':
+        return { text: 'Click Here', url: '#' };
+      case 'divider':
+        return {};
+      case 'spacer':
+        return {};
+      default:
+        return {};
+    }
+  };
+
+  const getDefaultStyles = (type: EmailComponent['type']) => {
+    switch (type) {
+      case 'text':
+        return {
+          color: '#333333',
+          fontSize: '16px',
+          lineHeight: '1.5',
+          margin: '20px',
+          padding: '0'
+        };
+      case 'image':
+        return {
+          width: '100%',
+          height: 'auto',
+          display: 'block',
+          margin: '20px auto'
+        };
+      case 'button':
+        return {
+          background: '#007bff',
+          color: '#ffffff',
+          padding: '12px 24px',
+          textDecoration: 'none',
+          borderRadius: '4px',
+          display: 'inline-block',
+          fontWeight: 'bold'
+        };
+      case 'divider':
+        return {
+          border: 'none',
+          borderTop: '1px solid #E5E7EB',
+          margin: '20px 0'
+        };
+      case 'spacer':
+        return {
+          height: '20px',
+          display: 'block'
+        };
+      default:
+        return {};
+    }
+  };
+
+  const updateComponent = (id: string, updates: Partial<EmailComponent>) => {
+    setEmailComponents(components =>
+      components.map(comp =>
+        comp.id === id ? { ...comp, ...updates } : comp
+      )
+    );
+  };
+
+  const deleteComponent = (id: string) => {
+    setEmailComponents(components => components.filter(comp => comp.id !== id));
+    setSelectedComponent(null);
+  };
+
+  const moveComponent = (fromIndex: number, toIndex: number) => {
+    const newComponents = [...emailComponents];
+    const [removed] = newComponents.splice(fromIndex, 1);
+    newComponents.splice(toIndex, 0, removed);
+    setEmailComponents(newComponents);
   };
 
   const emailAliases = aliases?.map((alias: any) => `${alias.alias}@thegeektrepreneur.com`) || [
@@ -313,25 +559,57 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-16 flex flex-col items-center justify-center">
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col items-center justify-center"
+                onClick={() => addComponent('text')}
+              >
                 <Type className="h-4 w-4 mb-1" />
                 <span className="text-xs">Text</span>
               </Button>
-              <Button variant="outline" className="h-16 flex flex-col items-center justify-center">
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col items-center justify-center"
+                onClick={() => addComponent('image')}
+              >
                 <ImageIcon className="h-4 w-4 mb-1" />
                 <span className="text-xs">Image</span>
               </Button>
-              <Button variant="outline" className="h-16 flex flex-col items-center justify-center">
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col items-center justify-center"
+                onClick={() => addComponent('button')}
+              >
                 <Link className="h-4 w-4 mb-1" />
                 <span className="text-xs">Button</span>
               </Button>
-              <Button variant="outline" className="h-16 flex flex-col items-center justify-center">
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col items-center justify-center"
+                onClick={() => addComponent('divider')}
+              >
                 <Minus className="h-4 w-4 mb-1" />
                 <span className="text-xs">Divider</span>
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Component Editor */}
+        {selectedComponent && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Edit Component</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ComponentEditor
+                component={emailComponents.find(c => c.id === selectedComponent)!}
+                onChange={(updates) => updateComponent(selectedComponent, updates)}
+                onDelete={() => deleteComponent(selectedComponent)}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Email Preview */}
@@ -367,12 +645,43 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
               <div className={`mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden ${
                 previewDevice === "mobile" ? "max-w-sm" : "max-w-2xl"
               }`}>
-                <div 
-                  dangerouslySetInnerHTML={{ 
-                    __html: form.watch("content.html") 
-                  }}
-                  className="prose max-w-none"
-                />
+                <div className="email-builder-canvas">
+                  {emailComponents.map((component, index) => (
+                    <div
+                      key={component.id}
+                      className={`component-wrapper relative group ${
+                        selectedComponent === component.id ? 'ring-2 ring-blue-500' : ''
+                      }`}
+                      onClick={() => setSelectedComponent(component.id)}
+                    >
+                      <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="flex space-x-1 bg-white border rounded p-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingComponent(component);
+                            }}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteComponent(component.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <EmailComponentRenderer component={component} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -412,6 +721,202 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Component Renderer
+function EmailComponentRenderer({ component }: { component: EmailComponent }) {
+  const styleString = Object.entries(component.styles)
+    .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value}`)
+    .join('; ');
+
+  switch (component.type) {
+    case 'text':
+      const Tag = component.content.tag || 'p';
+      return React.createElement(Tag, {
+        style: component.styles,
+        dangerouslySetInnerHTML: { __html: component.content.text }
+      });
+
+    case 'image':
+      return (
+        <img
+          src={component.content.src}
+          alt={component.content.alt || ''}
+          style={component.styles}
+        />
+      );
+
+    case 'button':
+      return (
+        <div style={{ textAlign: 'center', margin: '20px' }}>
+          <a
+            href={component.content.url}
+            style={component.styles}
+          >
+            {component.content.text}
+          </a>
+        </div>
+      );
+
+    case 'divider':
+      return <hr style={component.styles} />;
+
+    case 'spacer':
+      return <div style={component.styles}></div>;
+
+    default:
+      return null;
+  }
+}
+
+// Component Editor
+function ComponentEditor({ 
+  component, 
+  onChange, 
+  onDelete 
+}: { 
+  component: EmailComponent;
+  onChange: (updates: Partial<EmailComponent>) => void;
+  onDelete: () => void;
+}) {
+  const updateContent = (field: string, value: any) => {
+    onChange({
+      content: {
+        ...component.content,
+        [field]: value
+      }
+    });
+  };
+
+  const updateStyle = (field: string, value: any) => {
+    onChange({
+      styles: {
+        ...component.styles,
+        [field]: value
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Content Editor */}
+      {component.type === 'text' && (
+        <>
+          <div>
+            <Label>Text Content</Label>
+            <Textarea
+              value={component.content.text}
+              onChange={(e) => updateContent('text', e.target.value)}
+              placeholder="Enter your text..."
+            />
+          </div>
+          <div>
+            <Label>Text Tag</Label>
+            <select
+              value={component.content.tag}
+              onChange={(e) => updateContent('tag', e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="p">Paragraph</option>
+              <option value="h1">Heading 1</option>
+              <option value="h2">Heading 2</option>
+              <option value="h3">Heading 3</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {component.type === 'image' && (
+        <>
+          <div>
+            <Label>Image URL</Label>
+            <Input
+              value={component.content.src}
+              onChange={(e) => updateContent('src', e.target.value)}
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+          <div>
+            <Label>Alt Text</Label>
+            <Input
+              value={component.content.alt}
+              onChange={(e) => updateContent('alt', e.target.value)}
+              placeholder="Image description"
+            />
+          </div>
+        </>
+      )}
+
+      {component.type === 'button' && (
+        <>
+          <div>
+            <Label>Button Text</Label>
+            <Input
+              value={component.content.text}
+              onChange={(e) => updateContent('text', e.target.value)}
+              placeholder="Click Here"
+            />
+          </div>
+          <div>
+            <Label>Button URL</Label>
+            <Input
+              value={component.content.url}
+              onChange={(e) => updateContent('url', e.target.value)}
+              placeholder="https://example.com"
+            />
+          </div>
+        </>
+      )}
+
+      {/* Style Editor */}
+      <div className="border-t pt-4">
+        <h4 className="font-medium mb-2">Styling</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {component.type !== 'divider' && component.type !== 'spacer' && (
+            <>
+              <div>
+                <Label>Text Color</Label>
+                <Input
+                  type="color"
+                  value={component.styles.color || '#000000'}
+                  onChange={(e) => updateStyle('color', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Background</Label>
+                <Input
+                  value={component.styles.background || ''}
+                  onChange={(e) => updateStyle('background', e.target.value)}
+                  placeholder="#ffffff"
+                />
+              </div>
+            </>
+          )}
+          <div>
+            <Label>Margin</Label>
+            <Input
+              value={component.styles.margin || ''}
+              onChange={(e) => updateStyle('margin', e.target.value)}
+              placeholder="20px"
+            />
+          </div>
+          <div>
+            <Label>Padding</Label>
+            <Input
+              value={component.styles.padding || ''}
+              onChange={(e) => updateStyle('padding', e.target.value)}
+              placeholder="10px"
+            />
+          </div>
+        </div>
+      </div>
+
+      <Button variant="destructive" size="sm" onClick={onDelete}>
+        <Trash2 className="h-4 w-4 mr-2" />
+        Delete Component
+      </Button>
     </div>
   );
 }
