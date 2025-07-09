@@ -131,6 +131,7 @@ export const contacts = pgTable("contacts", {
   phone: varchar("phone"),
   location: varchar("location"),
   website: varchar("website"),
+  notes: text("notes"),
   customFields: jsonb("custom_fields"), // Flexible custom data storage
   tags: text("tags").array(),
   isActive: boolean("is_active").default(true),
