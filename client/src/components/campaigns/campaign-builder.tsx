@@ -29,7 +29,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  GripVertical
+  GripVertical,
+  Upload
 } from "lucide-react";
 import {
   Form,
@@ -186,6 +187,7 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
   ]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [editingComponent, setEditingComponent] = useState<EmailComponent | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
@@ -418,6 +420,19 @@ export function CampaignBuilder({ campaign, onSave, onCancel }: CampaignBuilderP
     const [removed] = newComponents.splice(fromIndex, 1);
     newComponents.splice(toIndex, 0, removed);
     setEmailComponents(newComponents);
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    try {
+      setUploadingImage(true);
+      const response = await apiRequest('POST', '/api/upload/image', formData);
+      return response.url;
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const emailAliases = aliases?.map((alias: any) => `${alias.alias}@thegeektrepreneur.com`) || [
@@ -831,12 +846,21 @@ function ComponentEditor({
       {component.type === 'image' && (
         <>
           <div>
-            <Label>Image URL</Label>
-            <Input
-              value={component.content.src}
-              onChange={(e) => updateContent('src', e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
+            <Label>Image Source</Label>
+            <div className="space-y-2">
+              <Input
+                value={component.content.src}
+                onChange={(e) => updateContent('src', e.target.value)}
+                placeholder="https://example.com/image.jpg"
+              />
+              <div className="text-center">
+                <span className="text-sm text-muted-foreground">or</span>
+              </div>
+              <ImageUpload
+                onUpload={(url) => updateContent('src', url)}
+                disabled={uploadingImage}
+              />
+            </div>
           </div>
           <div>
             <Label>Alt Text</Label>
@@ -917,6 +941,89 @@ function ComponentEditor({
         <Trash2 className="h-4 w-4 mr-2" />
         Delete Component
       </Button>
+    </div>
+  );
+}
+
+// Image Upload Component
+function ImageUpload({ onUpload, disabled }: { onUpload: (url: string) => void; disabled: boolean }) {
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, GIF, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await apiRequest('POST', '/api/upload/image', formData);
+      onUpload(response.url);
+      
+      toast({
+        title: "Image uploaded",
+        description: "Your image has been uploaded successfully!",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        disabled={disabled || uploading}
+        className="hidden"
+        id="image-upload"
+      />
+      <label htmlFor="image-upload">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={disabled || uploading}
+          className="w-full cursor-pointer"
+          asChild
+        >
+          <div>
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Uploading...' : 'Upload Image'}
+          </div>
+        </Button>
+      </label>
     </div>
   );
 }
