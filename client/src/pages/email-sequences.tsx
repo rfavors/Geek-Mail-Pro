@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +47,7 @@ import ReactFlow, {
   ConnectionMode,
   Handle,
   Position,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -196,6 +197,92 @@ const initialNodes: Node[] = [
 ];
 
 const initialEdges: Edge[] = [];
+
+// Flow Builder Component with proper positioning
+function FlowBuilder({ nodes, setNodes, edges, setEdges, onNodesChange, onEdgesChange, selectedNode, setSelectedNode }) {
+  const reactFlowWrapper = useRef(null);
+  
+  const onDrop = useCallback((event) => {
+    event.preventDefault();
+    
+    const type = event.dataTransfer.getData('application/reactflow');
+    
+    if (typeof type === 'undefined' || !type) {
+      return;
+    }
+    
+    // Get the bounding rectangle of the ReactFlow wrapper
+    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!reactFlowBounds) return;
+    
+    // Calculate position relative to the ReactFlow canvas
+    const position = {
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    };
+    
+    const nodeCount = nodes.filter(n => n.type === type).length;
+    
+    const newNode = {
+      id: `${type}-${Date.now()}`,
+      type,
+      position,
+      data: { 
+        label: type === 'email' ? `Email ${nodeCount + 1}` :
+               type === 'delay' ? `Wait ${nodeCount + 1}` :
+               `Condition ${nodeCount + 1}`,
+        ...(type === 'email' && { subject: 'Click to edit subject', delay: '0' }),
+        ...(type === 'delay' && { duration: '1', unit: 'days' }),
+        ...(type === 'condition' && { condition: 'Email opened' }),
+      },
+    };
+    
+    setNodes((nds) => nds.concat(newNode));
+  }, [nodes, setNodes]);
+  
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+  
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+  }, [setSelectedNode]);
+  
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  
+  return (
+    <div ref={reactFlowWrapper} className="w-full h-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        connectionMode={ConnectionMode.Loose}
+        fitView
+        className="bg-gradient-to-br from-blue-50 to-indigo-50"
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onNodeClick={onNodeClick}
+      >
+        <Controls />
+        <MiniMap 
+          nodeColor={(node) => {
+            switch (node.type) {
+              case 'email': return '#3b82f6';
+              case 'delay': return '#eab308';
+              case 'condition': return '#8b5cf6';
+              default: return '#6b7280';
+            }
+          }}
+        />
+        <Background variant="dots" gap={20} size={1} color="#cbd5e1" />
+      </ReactFlow>
+    </div>
+  );
+}
 
 export default function EmailSequences() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -580,70 +667,18 @@ export default function EmailSequences() {
 
             {/* Large Flow Builder Canvas */}
             <div className="flex-1 bg-gray-100 rounded-lg border overflow-hidden">
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                connectionMode={ConnectionMode.Loose}
-                fitView
-                className="bg-gradient-to-br from-blue-50 to-indigo-50"
-                onDrop={(event) => {
-                  event.preventDefault();
-                  
-                  const reactFlowBounds = event.currentTarget.getBoundingClientRect();
-                  const type = event.dataTransfer.getData('application/reactflow');
-
-                  if (typeof type === 'undefined' || !type) {
-                    return;
-                  }
-
-                  const position = {
-                    x: event.clientX - reactFlowBounds.left - 80,
-                    y: event.clientY - reactFlowBounds.top - 30,
-                  };
-
-                  const nodeCount = nodes.filter(n => n.type === type).length;
-                  
-                  const newNode: Node = {
-                    id: `${type}-${Date.now()}`,
-                    type,
-                    position,
-                    data: { 
-                      label: type === 'email' ? `Email ${nodeCount + 1}` :
-                             type === 'delay' ? `Wait ${nodeCount + 1}` :
-                             `Condition ${nodeCount + 1}`,
-                      ...(type === 'email' && { subject: 'Click to edit subject', delay: '0' }),
-                      ...(type === 'delay' && { duration: '1', unit: 'days' }),
-                      ...(type === 'condition' && { condition: 'Email opened' }),
-                    },
-                  };
-
-                  setNodes((nds) => nds.concat(newNode));
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'move';
-                }}
-                onNodeClick={(event, node) => {
-                  setSelectedNode(node);
-                }}
-              >
-                <Controls />
-                <MiniMap 
-                  nodeColor={(node) => {
-                    switch (node.type) {
-                      case 'email': return '#3b82f6';
-                      case 'delay': return '#eab308';
-                      case 'condition': return '#8b5cf6';
-                      default: return '#6b7280';
-                    }
-                  }}
+              <ReactFlowProvider>
+                <FlowBuilder
+                  nodes={nodes}
+                  setNodes={setNodes}
+                  edges={edges}
+                  setEdges={setEdges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
                 />
-                <Background variant="dots" gap={20} size={1} color="#cbd5e1" />
-              </ReactFlow>
+              </ReactFlowProvider>
             </div>
           </div>
         </DialogContent>
