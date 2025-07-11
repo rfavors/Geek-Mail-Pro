@@ -1,0 +1,125 @@
+{
+  "name": "Geek Mail Pro",
+  "description": "Email Marketing SaaS Platform - Custom domain email campaigns, contact management, and marketing automation",
+  "repository": "https://github.com/your-username/geek-mail-pro",
+  "logo": "https://raw.githubusercontent.com/your-username/geek-mail-pro/main/attached_assets/GeekMailProImage_1752066258236.png",
+  "keywords": ["email", "marketing", "saas", "campaigns", "automation"],
+  "category": "Marketing",
+  "stack": "Node.js",
+  "services": [
+    {
+      "name": "app",
+      "type": "application",
+      "dockerCompose": true,
+      "buildCommand": "npm run build",
+      "startCommand": "npm start",
+      "healthcheckPath": "/api/health",
+      "port": 5000,
+      "environments": [
+        {
+          "name": "NODE_ENV",
+          "value": "production",
+          "required": true
+        },
+        {
+          "name": "PORT",
+          "value": "5000",
+          "required": true
+        },
+        {
+          "name": "DATABASE_URL",
+          "description": "PostgreSQL connection string",
+          "required": true
+        },
+        {
+          "name": "SESSION_SECRET",
+          "description": "Secret key for session management (minimum 32 characters)",
+          "required": true
+        },
+        {
+          "name": "REPL_ID",
+          "description": "Replit application ID for authentication",
+          "required": true
+        },
+        {
+          "name": "REPLIT_DOMAINS",
+          "description": "Comma-separated list of allowed domains",
+          "required": true
+        },
+        {
+          "name": "ISSUER_URL",
+          "description": "OpenID Connect issuer URL",
+          "value": "https://replit.com/oidc",
+          "required": false
+        },
+        {
+          "name": "SMTP_USER",
+          "description": "SMTP username for email sending",
+          "required": true
+        },
+        {
+          "name": "SMTP_PASS",
+          "description": "SMTP password (use app password for Gmail)",
+          "required": true
+        },
+        {
+          "name": "SMTP_HOST",
+          "description": "SMTP server hostname",
+          "value": "smtp.gmail.com",
+          "required": false
+        },
+        {
+          "name": "SMTP_PORT",
+          "description": "SMTP server port",
+          "value": "587",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "postgres",
+      "type": "database",
+      "image": "postgres:15-alpine",
+      "environments": [
+        {
+          "name": "POSTGRES_DB",
+          "value": "geek_mail_pro"
+        },
+        {
+          "name": "POSTGRES_USER",
+          "value": "postgres"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "generate": true
+        }
+      ],
+      "volumes": [
+        {
+          "source": "postgres_data",
+          "target": "/var/lib/postgresql/data"
+        }
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "name": "postgres_data",
+      "type": "persistent"
+    },
+    {
+      "name": "uploads",
+      "type": "persistent"
+    }
+  ],
+  "postInstall": [
+    {
+      "description": "Initialize database schema",
+      "command": "npm run db:push"
+    }
+  ],
+  "documentation": {
+    "setup": "https://github.com/your-username/geek-mail-pro/blob/main/deployment/coolify-setup.md",
+    "api": "https://github.com/your-username/geek-mail-pro/blob/main/deployment/README.md"
+  }
+}

@@ -1,44 +1,57 @@
-name: geek-mail-pro
-description: "Email Marketing SaaS Platform - Custom domain email campaigns, contact management, and marketing automation"
+version: "3.8"
 
 services:
-  - name: app
-    image: node:20-alpine
+  app:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: geek-mail-pro
+    restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=production
-      - PORT=5000
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      REPL_ID: ${REPL_ID}
+      REPLIT_DOMAINS: ${REPLIT_DOMAINS}
+      ISSUER_URL: ${ISSUER_URL:-https://replit.com/oidc}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-    restart: unless-stopped
-    
-  - name: postgres
+    volumes:
+      - uploads:/app/uploads
+
+  postgres:
     image: postgres:15-alpine
+    container_name: geek-mail-pro-db
+    restart: unless-stopped
     environment:
-      - POSTGRES_DB=geek_mail_pro
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_DB: ${PGDATABASE:-geek_mail_pro}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-geek_mail_pro}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  - postgres_data
-
-networks:
-  - default
+  postgres_data:
+  uploads:

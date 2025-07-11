@@ -1,0 +1,61 @@
+# Geek Mail Pro Environment Variables Template
+# Copy this to Coolify environment variables section
+
+# ===== REQUIRED VARIABLES =====
+
+# Database Configuration (Auto-configured by Coolify if using PostgreSQL service)
+DATABASE_URL=postgresql://postgres:password@postgres:5432/geek_mail_pro
+PGHOST=postgres
+PGPORT=5432
+PGUSER=postgres
+PGPASSWORD=your-secure-database-password
+PGDATABASE=geek_mail_pro
+
+# Session Secret (REQUIRED - Generate a secure random string)
+SESSION_SECRET=your-super-secret-session-key-minimum-32-characters-long
+
+# Replit Authentication (REQUIRED - Get from Replit)
+REPL_ID=your-replit-app-id
+REPLIT_DOMAINS=your-domain.com,www.your-domain.com
+ISSUER_URL=https://replit.com/oidc
+
+# Email Configuration (REQUIRED - Use Gmail App Password or other SMTP)
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-character-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+
+# ===== OPTIONAL VARIABLES =====
+
+# Application Configuration
+NODE_ENV=production
+PORT=5000
+CUSTOM_DOMAIN=thegeektrepreneur.com
+
+# Email Service URLs (for webhooks)
+WEBHOOK_URL=https://your-domain.com/api/webhook/email
+
+# ===== SETUP INSTRUCTIONS =====
+
+# 1. SESSION_SECRET:
+#    Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#    Or use: openssl rand -hex 32
+
+# 2. REPL_ID and REPLIT_DOMAINS:
+#    Get from your Replit app settings
+#    REPLIT_DOMAINS should include all domains where your app will be accessible
+
+# 3. Gmail SMTP Setup:
+#    - Enable 2FA on Gmail account
+#    - Go to: Google Account > Security > 2-Step Verification > App passwords
+#    - Generate app password for "Mail"
+#    - Use the 16-character password as SMTP_PASS
+
+# 4. Database:
+#    - If using Coolify PostgreSQL service, DATABASE_URL will be auto-configured
+#    - Make sure PGPASSWORD is secure and matches your database password
+
+# 5. Domain Configuration:
+#    - Set REPLIT_DOMAINS to match your actual domain
+#    - Configure DNS to point to Coolify
+#    - SSL will be handled automatically by Coolify
