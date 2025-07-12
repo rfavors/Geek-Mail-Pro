@@ -20,6 +20,7 @@ import Billing from "@/pages/billing";
 import UnlimitedSetup from "@/pages/unlimited-setup";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import CheckoutSuccess from "@/pages/checkout-success";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -62,6 +63,7 @@ function Router() {
             <Route path="/" component={Landing} />
             <Route path="/login" component={Login} />
             <Route path="/signup" component={Signup} />
+            <Route path="/checkout/success" component={CheckoutSuccess} />
             <Route path="/unlimited-setup" component={UnlimitedSetup} />
           </>
         ) : (

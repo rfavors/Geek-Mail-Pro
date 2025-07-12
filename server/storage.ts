@@ -63,7 +63,16 @@ export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail?(email: string): Promise<User | undefined>;
+  getUserByStripeCustomerId?(customerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserStripeInfo?(userId: string, stripeInfo: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    plan?: string;
+    subscriptionStatus?: string;
+    trialEndsAt?: Date;
+    subscriptionEndsAt?: Date;
+  }): Promise<User>;
   
   // Domain operations
   createDomain(domain: InsertDomain): Promise<Domain>;
@@ -204,6 +213,30 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+    return user;
+  }
+
+  async updateUserStripeInfo(userId: string, stripeInfo: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    plan?: string;
+    subscriptionStatus?: string;
+    trialEndsAt?: Date;
+    subscriptionEndsAt?: Date;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...stripeInfo,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
     return user;
   }
 

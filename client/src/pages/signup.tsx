@@ -9,60 +9,26 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Mail, Lock, Loader2, Check, CreditCard } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: 19,
-    description: "Perfect for small businesses getting started",
-    features: [
-      "Up to 2,500 subscribers",
-      "15,000 emails per month",
-      "Custom domain sending",
-      "Drag & drop editor",
-      "Basic analytics",
-      "Email support"
-    ]
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 49,
-    description: "For growing businesses that need more power",
-    features: [
-      "Up to 10,000 subscribers",
-      "100,000 emails per month",
-      "Custom domain sending",
-      "Advanced automation",
-      "A/B testing",
-      "Advanced analytics",
-      "Priority support"
-    ],
-    popular: true
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 149,
-    description: "For large organizations with custom needs",
-    features: [
-      "Unlimited subscribers",
-      "Unlimited emails",
-      "Dedicated IP",
-      "Multi-user accounts",
-      "API access",
-      "White-label options",
-      "24/7 phone support"
-    ]
-  }
-];
+// Load plans from API
+function usePricingPlans() {
+  return useQuery({
+    queryKey: ["/api/pricing/plans"],
+    queryFn: async () => {
+      const response = await fetch("/api/pricing/plans");
+      if (!response.ok) throw new Error("Failed to load pricing plans");
+      return response.json();
+    },
+  });
+}
 
 export default function Signup() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState("pro");
   const [step, setStep] = useState(1); // 1: Plan selection, 2: Account details, 3: Payment
+  const { data: plans, isLoading: plansLoading } = usePricingPlans();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -90,12 +56,39 @@ export default function Signup() {
       
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({
-        title: "Account Created Successfully",
-        description: "Welcome to Geek Mail Pro! Your trial period has started.",
+        title: "Account Created Successfully", 
+        description: "Redirecting to secure payment...",
       });
-      window.location.href = "/";
+      
+      // Create Stripe checkout session or redirect to dashboard in development
+      try {
+        const checkoutResponse = await fetch("/api/payment/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ planId: selectedPlan })
+        });
+        
+        if (checkoutResponse.ok) {
+          const { url } = await checkoutResponse.json();
+          window.location.href = url;
+        } else if (checkoutResponse.status === 503) {
+          // Payment not configured - development mode
+          toast({
+            title: "Development Mode",
+            description: "Stripe not configured. Redirecting to dashboard...",
+          });
+          setTimeout(() => window.location.href = "/", 2000);
+        } else {
+          // Other error
+          window.location.href = "/";
+        }
+      } catch (error) {
+        console.error("Checkout error:", error);
+        window.location.href = "/";
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -118,7 +111,7 @@ export default function Signup() {
       return;
     }
 
-    const selectedPlanData = plans.find(p => p.id === selectedPlan);
+    const selectedPlanData = plans ? Object.values(plans).find((p: any) => p.id === selectedPlan) : null;
     
     signupMutation.mutate({
       ...formData,
@@ -134,7 +127,19 @@ export default function Signup() {
     }));
   };
 
-  if (step === 1) {
+  if (plansLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading pricing plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 1 && plans) {
+    const plansArray = Object.values(plans);
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl">
@@ -144,7 +149,7 @@ export default function Signup() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {plans.map((plan) => (
+            {plansArray.map((plan: any) => (
               <Card 
                 key={plan.id} 
                 className={`cursor-pointer transition-all hover:shadow-lg ${
@@ -180,7 +185,7 @@ export default function Signup() {
           
           <div className="text-center">
             <Button size="lg" onClick={() => setStep(2)}>
-              Continue with {plans.find(p => p.id === selectedPlan)?.name} Plan
+              Continue with {plansArray.find((p: any) => p.id === selectedPlan)?.name} Plan
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
               14-day free trial • No credit card required • Cancel anytime
@@ -200,7 +205,10 @@ export default function Signup() {
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
-            Sign up for {plans.find(p => p.id === selectedPlan)?.name} plan - ${plans.find(p => p.id === selectedPlan)?.price}/month
+            {plans && Object.values(plans).find((p: any) => p.id === selectedPlan) ? 
+              `Sign up for ${Object.values(plans).find((p: any) => p.id === selectedPlan)?.name} plan - $${Object.values(plans).find((p: any) => p.id === selectedPlan)?.price}/month` :
+              "Sign up for Geek Mail Pro"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { createCheckout, createBillingPortal, handleWebhook } from "./payment";
+import { PRICING_PLANS } from "./stripe";
 import nodemailer from "nodemailer";
 import { emailForwardingService, type IncomingEmail } from "./emailForwarding";
 import { z } from "zod";
@@ -183,6 +185,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ success: false, message: 'Internal server error' });
     }
   });
+
+  // Get pricing plans
+  app.get('/api/pricing/plans', (req, res) => {
+    res.json(PRICING_PLANS);
+  });
+
+  // Create Stripe checkout session
+  app.post('/api/payment/create-checkout', isAuthenticated, createCheckout);
+
+  // Create billing portal session
+  app.post('/api/payment/billing-portal', isAuthenticated, createBillingPortal);
+
+  // Stripe webhook handler
+  app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
   // Custom login endpoint for unlimited user
   app.post('/api/auth/login', async (req, res) => {
