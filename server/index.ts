@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 import helmet from "helmet";
 import cors from "cors";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -132,6 +133,18 @@ async function handleWebhook(req: any, res: any) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Initialize session middleware for custom login
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false, // Set to true in production with HTTPS
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();

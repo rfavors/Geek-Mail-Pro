@@ -124,6 +124,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Custom login endpoint for unlimited user
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      console.log('Login attempt:', { email, session: !!req.session, sessionObj: req.session });
+      
+      if (email === 'raymond@thegeektrepreneur.com' && password === 'Nomorelies101@') {
+        // Create/update user with unlimited plan
+        const user = await storage.upsertUser({
+          id: 'unlimited-user-raymond',
+          email: 'raymond@thegeektrepreneur.com',
+          firstName: 'Raymond',
+          lastName: 'Favors',
+          profileImageUrl: null,
+        });
+        
+        // Create session
+        req.session = req.session || {};
+        req.session.user = {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          plan: 'unlimited'
+        };
+        
+        // Save session explicitly
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+          }
+        });
+        
+        res.json({ 
+          success: true, 
+          message: 'Login successful',
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            plan: 'unlimited'
+          }
+        });
+      } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
   // Admin setup for unlimited user
   app.post('/api/admin/setup-unlimited-user', async (req, res) => {
     try {
@@ -183,22 +237,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // Check session-based auth first
+      if (req.session?.user) {
+        return res.json(req.session.user);
+      }
+      
+      // Check Replit auth if available
+      if (req.isAuthenticated && req.isAuthenticated() && req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        return res.json(user);
+      }
+      
+      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
+  // Logout endpoint
+  app.post('/api/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destruction error:', err);
+        return res.status(500).json({ success: false, message: 'Logout failed' });
+      }
+      res.json({ success: true, message: 'Logged out successfully' });
+    });
+  });
+
   // Get user plan (check if user has unlimited plan)
-  app.get('/api/user-plan', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user-plan', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const userEmail = req.user?.claims?.email;
+      let userEmail = null;
+      
+      // Check session-based auth first
+      if (req.session?.user) {
+        userEmail = req.session.user.email;
+      }
+      // Check Replit auth if available
+      else if (req.isAuthenticated && req.isAuthenticated() && req.user?.claims?.email) {
+        userEmail = req.user.claims.email;
+      }
       
       // Check if this is the unlimited user
       if (userEmail === 'raymond@thegeektrepreneur.com') {

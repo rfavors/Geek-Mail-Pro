@@ -18,6 +18,7 @@ import ContactSegments from "@/pages/contact-segments";
 import DomainSettings from "@/pages/domain-settings";
 import Billing from "@/pages/billing";
 import UnlimitedSetup from "@/pages/unlimited-setup";
+import Login from "@/pages/login";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -58,6 +59,7 @@ function Router() {
         {isLoading || !isAuthenticated ? (
           <>
             <Route path="/" component={Landing} />
+            <Route path="/login" component={Login} />
             <Route path="/unlimited-setup" component={UnlimitedSetup} />
           </>
         ) : (

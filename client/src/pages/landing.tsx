@@ -43,10 +43,10 @@ export default function Landing() {
               <ModeToggle />
               
               <Button variant="ghost" asChild>
-                <a href="/api/login">Login</a>
+                <a href="/login">Login</a>
               </Button>
               <Button asChild>
-                <a href="/api/login">Get Started</a>
+                <a href="/login">Get Started</a>
               </Button>
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <a href="/api/login">Start Free Trial</a>
+                <a href="/login">Get Started Free</a>
               </Button>
               <Button variant="outline" size="lg">
                 <Play className="h-4 w-4 mr-2" />
