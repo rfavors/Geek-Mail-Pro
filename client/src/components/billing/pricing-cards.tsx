@@ -117,6 +117,37 @@ export function PricingCards({ currentPlan }: PricingCardsProps) {
         "Advanced reporting",
         "Dedicated account manager"
       ]
+    },
+    {
+      id: "unlimited",
+      name: "Unlimited Pro",
+      price: "Free",
+      monthlyPrice: 0,
+      annualPrice: 0,
+      description: "Special unlimited access plan for power users",
+      icon: Crown,
+      color: "bg-gradient-to-r from-purple-600 to-pink-600",
+      subscribers: "Unlimited",
+      emails: "Unlimited",
+      popular: false,
+      features: [
+        "Unlimited subscribers",
+        "Unlimited emails",
+        "Custom domain sending",
+        "Advanced automation",
+        "A/B testing",
+        "Advanced analytics",
+        "Priority support",
+        "Custom templates",
+        "Advanced segmentation",
+        "Send time optimization",
+        "White-label solution",
+        "API access",
+        "Custom integrations",
+        "Priority delivery",
+        "No usage limits",
+        "All premium features"
+      ]
     }
   ];
 
@@ -238,7 +269,7 @@ export function PricingCards({ currentPlan }: PricingCardsProps) {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {plans.map((plan) => {
           const IconComponent = plan.icon;
           const status = getPlanStatus(plan.id);
