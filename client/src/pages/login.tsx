@@ -19,20 +19,33 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await apiRequest("/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(credentials)
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+        credentials: "include" // Include cookies for session
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
+      console.log("Login success:", data);
       toast({
         title: "Login Successful",
         description: "Welcome to your unlimited email marketing platform!",
       });
-      setLocation("/");
+      // Force refresh to update auth state
+      window.location.href = "/";
     },
     onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials",
@@ -43,6 +56,7 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting login with:", formData);
     loginMutation.mutate(formData);
   };
 
