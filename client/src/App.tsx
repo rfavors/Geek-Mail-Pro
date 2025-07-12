@@ -19,6 +19,7 @@ import DomainSettings from "@/pages/domain-settings";
 import Billing from "@/pages/billing";
 import UnlimitedSetup from "@/pages/unlimited-setup";
 import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -60,6 +61,7 @@ function Router() {
           <>
             <Route path="/" component={Landing} />
             <Route path="/login" component={Login} />
+            <Route path="/signup" component={Signup} />
             <Route path="/unlimited-setup" component={UnlimitedSetup} />
           </>
         ) : (

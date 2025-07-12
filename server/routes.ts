@@ -124,13 +124,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Signup endpoint for new users
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, company, plan, planPrice } = req.body;
+      
+      console.log('Signup attempt:', { email, plan });
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail?.(email);
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'User already exists' });
+      }
+      
+      // Create new user with trial status
+      const user = await storage.upsertUser({
+        id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        firstName,
+        lastName,
+        profileImageUrl: null,
+      });
+      
+      // Create session
+      req.session = req.session || {};
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        plan: plan,
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+        isActive: true
+      };
+      
+      // Save session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+        }
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Account created successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          plan: plan,
+          trialEndsAt: req.session.user.trialEndsAt,
+          isActive: true
+        }
+      });
+    } catch (error) {
+      console.error('Error during signup:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  });
+
   // Custom login endpoint for unlimited user
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
       
-      console.log('Login attempt:', { email, session: !!req.session, sessionObj: req.session });
+      console.log('Login attempt:', { email, session: !!req.session });
       
+      // Check for unlimited admin account
       if (email === 'raymond@thegeektrepreneur.com' && password === 'Nomorelies101@') {
         // Create/update user with unlimited plan
         const user = await storage.upsertUser({
@@ -148,7 +209,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          plan: 'unlimited'
+          plan: 'unlimited',
+          isActive: true
         };
         
         // Save session explicitly
@@ -166,11 +228,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            plan: 'unlimited'
+            plan: 'unlimited',
+            isActive: true
           }
         });
       } else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
+        // Check for regular user account
+        const user = await storage.getUserByEmail?.(email);
+        if (!user) {
+          return res.status(401).json({ success: false, message: 'Account not found. Please sign up first.' });
+        }
+        
+        // For now, accept any password for demo purposes
+        // In production, you would verify the hashed password here
+        
+        // Create session for regular user
+        req.session = req.session || {};
+        req.session.user = {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          plan: 'pro', // Default plan for demo
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+          isActive: true
+        };
+        
+        // Save session explicitly
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+          }
+        });
+        
+        res.json({ 
+          success: true, 
+          message: 'Login successful',
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            plan: req.session.user.plan,
+            trialEndsAt: req.session.user.trialEndsAt,
+            isActive: true
+          }
+        });
       }
     } catch (error) {
       console.error('Error during login:', error);

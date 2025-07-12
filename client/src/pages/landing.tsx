@@ -73,7 +73,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <a href="/login">Get Started Free</a>
+                <a href="/signup">Get Started Free</a>
               </Button>
               <Button variant="outline" size="lg">
                 <Play className="h-4 w-4 mr-2" />
@@ -343,7 +343,7 @@ export default function Landing() {
                 </ul>
                 
                 <Button variant="outline" className="w-full" asChild>
-                  <a href="/api/login">Start Free Trial</a>
+                  <a href="/signup">Start Free Trial</a>
                 </Button>
               </CardContent>
             </Card>
@@ -379,7 +379,7 @@ export default function Landing() {
                 </ul>
                 
                 <Button className="w-full" asChild>
-                  <a href="/api/login">Start Free Trial</a>
+                  <a href="/signup">Start Free Trial</a>
                 </Button>
               </CardContent>
             </Card>
@@ -417,25 +417,7 @@ export default function Landing() {
             </Card>
           </div>
 
-          {/* Test Card Information */}
-          <Card className="mt-16 bg-muted/50">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <DollarSign className="h-5 w-5 text-primary mr-2" />
-                Test Payment Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2"><strong>Test Card Number:</strong></p>
-                  <code className="bg-background px-3 py-2 rounded text-sm border">4242 4242 4242 4242</code>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2"><strong>Test Details:</strong></p>
-                  <p className="text-sm text-muted-foreground">Expiry: Any future date | CVC: Any 3 digits</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
         </div>
       </section>
 

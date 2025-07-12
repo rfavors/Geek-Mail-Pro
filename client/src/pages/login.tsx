@@ -13,8 +13,8 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    email: "raymond@thegeektrepreneur.com",
-    password: "Nomorelies101@"
+    email: "",
+    password: ""
   });
 
   const loginMutation = useMutation({
@@ -78,6 +78,11 @@ export default function Login() {
           <CardDescription>
             Sign in to your Geek Mail Pro account
           </CardDescription>
+          <div className="text-center mt-2">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account? <a href="/signup" className="text-primary hover:underline">Sign up for free trial</a>
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
