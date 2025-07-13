@@ -186,16 +186,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Custom auth middleware for session-based auth
+  const requireAuth = (req: any, res: any, next: any) => {
+    // Check session-based auth first
+    if (req.session?.user) {
+      return next();
+    }
+    // Check Replit auth if available
+    if (req.isAuthenticated && req.isAuthenticated() && req.user?.claims?.sub) {
+      return next();
+    }
+    return res.status(401).json({ message: "Unauthorized" });
+  };
+
   // Get pricing plans
   app.get('/api/pricing/plans', (req, res) => {
     res.json(PRICING_PLANS);
   });
 
   // Create Stripe checkout session
-  app.post('/api/payment/create-checkout', isAuthenticated, createCheckout);
+  app.post('/api/payment/create-checkout', requireAuth, createCheckout);
 
   // Create billing portal session
-  app.post('/api/payment/billing-portal', isAuthenticated, createBillingPortal);
+  app.post('/api/payment/billing-portal', requireAuth, createBillingPortal);
 
   // Stripe webhook handler
   app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), handleWebhook);
@@ -334,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Image upload route
-  app.post('/api/upload/image', isAuthenticated, upload.single('image'), async (req: any, res) => {
+  app.post('/api/upload/image', requireAuth, upload.single('image'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
@@ -432,9 +445,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Domain management routes
-  app.post('/api/domains', isAuthenticated, async (req: any, res) => {
+  app.post('/api/domains', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Get user ID from session or Replit auth
+      let userId = null;
+      if (req.session?.user) {
+        userId = req.session.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      }
+      
       const domainData = insertDomainSchema.parse({ ...req.body, userId });
       
       // Mock DNS verification for thegeektrepreneur.com
@@ -457,9 +477,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/domains', isAuthenticated, async (req: any, res) => {
+  app.get('/api/domains', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Get user ID from session or Replit auth
+      let userId = null;
+      if (req.session?.user) {
+        userId = req.session.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      }
+      
       const domains = await storage.getDomainsByUserId(userId);
       res.json(domains);
     } catch (error) {
@@ -469,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Email alias routes
-  app.post('/api/domains/:domainId/aliases', isAuthenticated, async (req: any, res) => {
+  app.post('/api/domains/:domainId/aliases', requireAuth, async (req: any, res) => {
     try {
       const domainId = parseInt(req.params.domainId);
       const aliasData = insertEmailAliasSchema.parse({ ...req.body, domainId, isVerified: true });
@@ -482,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/domains/:domainId/aliases', isAuthenticated, async (req: any, res) => {
+  app.get('/api/domains/:domainId/aliases', requireAuth, async (req: any, res) => {
     try {
       const domainId = parseInt(req.params.domainId);
       const aliases = await storage.getEmailAliasesByDomainId(domainId);
