@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
 import { 
   Sparkles, 
-  Play, 
   Users, 
   Mail, 
   TrendingUp, 
@@ -71,13 +70,9 @@ export default function Landing() {
               Build, send, and track professional email campaigns with custom domain support. 
               Higher deliverability, better open rates, and complete control over your email reputation.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <Button size="lg" asChild>
                 <a href="/signup">Get Started Free</a>
-              </Button>
-              <Button variant="outline" size="lg">
-                <Play className="h-4 w-4 mr-2" />
-                Watch Demo
               </Button>
             </div>
           </div>
