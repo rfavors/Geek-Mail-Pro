@@ -20,6 +20,7 @@ import {
   Linkedin
 } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import geekMailProImage from "@assets/GeekMailProLanding_1752460639043.png";
 
 export default function Landing() {
   return (
@@ -77,14 +78,14 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Hero Dashboard Preview */}
-          <div className="relative max-w-6xl mx-auto">
+          {/* Hero Brand Image */}
+          <div className="relative max-w-4xl mx-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl"></div>
             <Card className="relative border shadow-2xl">
               <CardContent className="p-0">
                 <img 
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800" 
-                  alt="Geek Mail Pro Dashboard Interface" 
+                  src={geekMailProImage} 
+                  alt="GeekMail Pro - Email Marketing for Geeks" 
                   className="w-full rounded-lg"
                 />
               </CardContent>
